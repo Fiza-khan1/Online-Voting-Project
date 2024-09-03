@@ -1,0 +1,15 @@
+/* Remove border from dropdown toggle */
+.dropdown-toggle {
+    border: none !important;
+  }
+  
+  /* Remove border from dropdown menu items */
+  .dropdown-menu {
+    border: none !important;
+  }
+  
+  /* Optionally, customize dropdown items further */
+  .dropdown-item {
+    border: none !important;
+  }
+  

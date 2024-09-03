@@ -1,0 +1,106 @@
+.create-agenda {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  h1 {
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .agenda-form, .option-form {
+    margin-bottom: 20px;
+  }
+  
+  .agenda-form input, .option-form input {
+    padding: 10px;
+    font-size: 16px;
+    margin-right: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 250px;
+  }
+  
+  .agenda-form button, .option-form button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .agenda-form button:hover, .option-form button:hover {
+    background-color: #45a049;
+  }
+  
+  .option-form select {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-right: 10px;
+  }
+  
+  .agenda-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .agenda-item, .option-item {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+    padding: 15px;
+    position: relative;
+    max-width: 300px;
+    width: 100%;
+  }
+  
+  .agenda-item-header, .option-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .agenda-item-header h3, .option-item-header h4 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+  }
+  
+  .remove-btn {
+    background-color: transparent;
+    border: none;
+    color: #f44336;
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+  
+  .remove-btn:hover {
+    color: #d32f2f;
+  }
+  
+  .option-list {
+    margin-top: 10px;
+  }
+  
+  .option-item {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
