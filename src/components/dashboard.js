@@ -5,12 +5,18 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import './CssFolder/Dashboard.css'; // Add custom CSS file for additional styling
 
-function Dashboard({ isAdmin }) {  // Pass an isAdmin prop to determine if the user is an admin
+function Dashboard() { 
+    const tokenuser=localStorage.getItem('authToken'); 
+    console.log("Token of user is :",tokenuser)
+    let username=localStorage.getItem('username');
+
+    // Pass an isAdmin prop to determine if the user is an admin
   return (
     <Container className="mt-4">
       <h1 className="text-center mb-4">Welcome to the Voting System</h1>
       <Row className="g-4">
-        {isAdmin && (  // Only show this card if the user is an admin
+        {username === 'admin' && (  // Only show this card if the user is an admin
+
           <Col md={6} lg={4}>
             <Card className="custom-card">
               <Card.Img variant="top" src="https://picsum.photos/id/870/200/300?grayscale&blur=2" />

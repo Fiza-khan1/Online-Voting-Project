@@ -28,6 +28,9 @@ const UserProfile = () => {
         console.log('Fetched profile data:', profileData);
         setUser(profileData);
         setFormData(profileData);
+
+        // Store user's name in localStorage
+        localStorage.setItem('username', profileData.username);
       } else {
         console.error('Failed to fetch profile:', await response.json());
       }
@@ -76,6 +79,9 @@ const UserProfile = () => {
         const updatedProfile = await response.json();
         setUser(updatedProfile);
         setIsEditing(false);
+
+        // Update the stored user's name in localStorage
+        localStorage.setItem('username', updatedProfile.username);
       } else {
         const errorText = await response.text();
         console.error('Failed to update profile:', errorText);

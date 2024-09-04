@@ -6,6 +6,7 @@ import './CssFolder/LandingPage.css';
 function LandingPage() {
   const { isAuthenticated } = useAuth(); // Check if the user is authenticated
   const navigate = useNavigate();
+ 
 
   useEffect(() => {
    
