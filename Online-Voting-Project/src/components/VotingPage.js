@@ -8,6 +8,7 @@ function VotePage() {
   const { id } = useParams(); // Get the election ID from URL
   const [hasVoted, setHasVoted] = useState(false);
   const [selectedOption, setSelectedOption] = useState('');
+ 
 
   // Dummy options for voting
   const options = [

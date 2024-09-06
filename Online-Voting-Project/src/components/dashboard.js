@@ -54,7 +54,7 @@ function Dashboard() {
               <Card.Text>
                 Explore the ongoing voting sessions and make your voice heard.
               </Card.Text>
-              <Card.Link href="/see-votes" className="btn btn-primary">View Upcomming Elections</Card.Link>
+              <Card.Link href="/upcomming" className="btn btn-primary">View Upcomming Elections</Card.Link>
             </Card.Body>
           </Card>
         </Col>

@@ -16,6 +16,9 @@ import CurrentElection from './components/CurrentElections';
 import UserProfile from './components/ProfilePage'
 import TopPart from './components/TopPart'
 import CreateAgenda from './components/CreateAgenda';
+import UpcomingElection from './components/upcomming'
+import ElectionOptions from './components/ElectionOption'
+import ElectionResults from './components/result.js'
 
 function App() {
   const { isAuthenticated } = useAuth();  // Removed logout as it's not used
@@ -34,14 +37,15 @@ function App() {
           {isAuthenticated ? (
             <>
               <Route path="contact" element={<ContactPage />} />
+              <Route path="upcomming" element={<UpcomingElection />} />
               <Route path="top" element={<TopPart />} />
               <Route path="dashboard" element={<Dashboard isAdmin={isAdmin} />} />
               <Route path="agendas" element={<AgendasPage />} />      
-              <Route path="vote/:id" element={<VotePage />} />
+              <Route path="/vote/:id" element={<ElectionOptions />} />
               <Route path="current-elections" element={<CurrentElection />} />
               <Route path="profile" element={<UserProfile />} />
+              <Route path="results" element={<ElectionResults />} />
               <Route path="*" element={<NoPage />} />
-
             </>
           ) : (
             <>
