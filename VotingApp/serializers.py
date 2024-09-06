@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 
-# Serializer for user registration
+
 from rest_framework.validators import UniqueValidator
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -43,10 +43,70 @@ class UserLoginSerializer(serializers.Serializer):
 
 from .models import UserProfile
 
-
 class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
     class Meta:
         model = UserProfile
         fields = ['id', 'bio', 'profile_picture', 'user', 'username', 'email']
+
+
+# agenda/serializers.py
+from .models import Agenda, Option
+
+from rest_framework import serializers
+from .models import Option
+
+class OptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Option
+        fields = ['id', 'name', 'agenda']  # Ensure 'agenda' is included
+
+
+class AgendaSerializer(serializers.ModelSerializer):
+    options = OptionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Agenda
+        fields = ['id', 'name', 'description', 'start_date', 'end_date', 'options']
+
+    def validate(self, data):
+        """
+        Check that the start_date is before the end_date.
+        """
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        if start_date and end_date and start_date >= end_date:
+            raise serializers.ValidationError("End date must be after the start date.")
+
+        return data
+
+# VotingApp/serializers.py
+
+from rest_framework import serializers
+from .models import Vote, OptionVoteCount, AgendaVoteCount
+
+class VoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vote
+        fields = ['user', 'agenda', 'option']
+
+from rest_framework import serializers
+from .models import OptionVoteCount, AgendaVoteCount
+
+class OptionVoteCountSerializer(serializers.ModelSerializer):
+    option_name = serializers.CharField(source='option.name', read_only=True)
+    agenda_title = serializers.CharField(source='option.agenda.name', read_only=True)  # Get agenda name through option
+    agenda_description = serializers.CharField(source='option.agenda.description', read_only=True)  # Get agenda description
+
+    class Meta:
+        model = OptionVoteCount
+        fields = ['option', 'option_name', 'agenda_title', 'agenda_description', 'vote_count']
+
+class AgendaVoteCountSerializer(serializers.ModelSerializer):
+    agenda_name = serializers.CharField(source='agenda.name', read_only=True)
+    agenda_title = serializers.CharField(source='agenda.name', read_only=True)
+    agenda_description = serializers.CharField(source='agenda.description', read_only=True)
+    class Meta:
+        model = AgendaVoteCount
+        fields = ['agenda', 'agenda_name', 'agenda_title', 'agenda_description', 'vote_count']
