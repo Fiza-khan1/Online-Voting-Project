@@ -8,6 +8,10 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate,logout
 from django.contrib.auth.models import User
 from rest_framework.decorators import api_view, permission_classes
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from django.db.models import Count
+
 # Create your views here.
 class UserRegisterView(APIView):
     permission_classes = [AllowAny]
@@ -133,15 +137,111 @@ class OptionVoteCountViewSet(viewsets.ModelViewSet):
 class AgendaVoteCountViewSet(viewsets.ModelViewSet):
     queryset = AgendaVoteCount.objects.all()
     serializer_class = AgendaVoteCountSerializer
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated]) 
+# def create_vote(request):
+#     username = request.data.get('username')  # Get username from request body
+#     agenda_id = request.data.get('agenda')
+#     option_id = request.data.get('option')
+
+#     try:
+#         user = User.objects.get(username=username)  # Fetch the user by username
+#         agenda = Agenda.objects.get(id=agenda_id)
+#         option = Option.objects.get(id=option_id)
+#     except (User.DoesNotExist, Agenda.DoesNotExist, Option.DoesNotExist):
+#         return Response({'detail': 'Invalid user, agenda, or option.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     if Vote.objects.filter(user=user, agenda=agenda).exists():
+#         return Response({'detail': 'You have already voted for this agenda.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     # Create and save the vote
+#     vote = Vote(user=user, agenda=agenda, option=option)
+#     vote.save()
+
+#     channel_layer = get_channel_layer()
+#     # Make sure that the group name matches the one used in the WebSocket consumer
+#     async_to_sync(channel_layer.group_send)(
+#         "vote_count_group",
+#         {
+#             "type": "update_vote_count",
+#             # Include any necessary data to update the WebSocket clients
+#             "data": {
+#                 "option_counts": get_option_counts(),  # Example function to get option counts
+#                 "agenda_counts": get_agenda_counts(),  # Example function to get agenda counts
+#             }
+#         }
+#     )
+
+#     return Response({'detail': 'Vote submitted successfully.'}, status=status.HTTP_201_CREATED)
+# _______________________________________________________________________________
+# from .models import Agenda, Option, Vote
+# from django.db.models import Count
+
+# def get_option_counts():
+#     """
+#     Fetches the vote counts for all options.
+#     Returns a list of dictionaries, each containing the option ID and vote count.
+#     """
+#     option_counts = (
+#         Vote.objects.values('option_id')
+#         .annotate(vote_count=Count('option_id'))
+#         .values('option_id', 'vote_count')
+#     )
+    
+#     # Format the result as a list of dictionaries with option details
+#     return [
+#         {
+#             'option_id': option['option_id'],
+#             'vote_count': option['vote_count'],
+#             'option_name': Option.objects.get(id=option['option_id']).name,  # Adjust according to your model
+#             'agenda_name': Option.objects.get(id=option['option_id']).agenda.name  # Adjust according to your model
+#         }
+#         for option in option_counts
+#     ]
+
+# def get_agenda_counts():
+#     """
+#     Fetches the vote counts for all agendas.
+#     Returns a list of dictionaries, each containing the agenda ID and vote count.
+#     """
+#     agenda_counts = (
+#         Vote.objects.values('agenda_id')
+#         .annotate(vote_count=Count('agenda_id'))
+#         .values('agenda_id', 'vote_count')
+#     )
+    
+#     # Format the result as a list of dictionaries with agenda details
+#     return [
+#         {
+#             'agenda_id': agenda['agenda_id'],
+#             'vote_count': agenda['vote_count'],
+#             'agenda_name': Agenda.objects.get(id=agenda['agenda_id']).name,  # Adjust according to your model
+#             'agenda_description': Agenda.objects.get(id=agenda['agenda_id']).description  # Adjust according to your model
+#         }
+#         for agenda in agenda_counts
+#     ]
+
+# _________________________________________________________
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Agenda, Option, Vote
+from django.contrib.auth.models import User
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 @api_view(['POST'])
-@permission_classes([IsAuthenticated]) 
+@permission_classes([IsAuthenticated])
 def create_vote(request):
-    username = request.data.get('username')  # Get username from request body
+    # Fetch user, agenda, and option details
+    username = request.data.get('username')
     agenda_id = request.data.get('agenda')
     option_id = request.data.get('option')
 
     try:
-        user = User.objects.get(username=username)  # Fetch the user by username
+        user = User.objects.get(username=username)
         agenda = Agenda.objects.get(id=agenda_id)
         option = Option.objects.get(id=option_id)
     except (User.DoesNotExist, Agenda.DoesNotExist, Option.DoesNotExist):
@@ -150,8 +250,131 @@ def create_vote(request):
     if Vote.objects.filter(user=user, agenda=agenda).exists():
         return Response({'detail': 'You have already voted for this agenda.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Create and save the vote
-    vote = Vote(user=user, agenda=agenda, option=option)
-    vote.save()
+    # Save the vote
+    Vote.objects.create(user=user, agenda=agenda, option=option)
+
+    # Send message to WebSocket group
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "vote_count_group",
+        {
+            "type": "update_vote_count",
+        }
+    )
 
     return Response({'detail': 'Vote submitted successfully.'}, status=status.HTTP_201_CREATED)
+
+def get_option_counts():
+    option_counts = (
+        Vote.objects
+        .select_related('option')
+        .values('option_id')
+        .annotate(vote_count=Count('option_id'))
+        .values('option_id', 'vote_count', 'option__name')
+    )
+    
+    return [
+        {
+            'id': option['option_id'],
+            'name': option['option__name'],
+            'vote_count': option['vote_count']
+        }
+        for option in option_counts
+    ]
+
+def get_agenda_counts():
+    agenda_counts = (
+        Vote.objects
+        .select_related('agenda')
+        .values('agenda_id')
+        .annotate(vote_count=Count('agenda_id'))
+        .values('agenda_id', 'vote_count', 'agenda__name', 'agenda__description')
+    )
+    
+    return [
+        {
+            'id': agenda['agenda_id'],
+            'name': agenda['agenda__name'],
+            'description': agenda['agenda__description'],
+            'vote_count': agenda['vote_count']
+        }
+        for agenda in agenda_counts
+    ]
+
+# @api_view(['POST'])
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated]) 
+# def create_vote(request):
+#     username = request.data.get('username')  # Get username from request body
+#     agenda_id = request.data.get('agenda')
+#     option_id = request.data.get('option')
+
+#     try:
+#         user = User.objects.get(username=username)  # Fetch the user by username
+#         agenda = Agenda.objects.get(id=agenda_id)
+#         option = Option.objects.get(id=option_id)
+#     except (User.DoesNotExist, Agenda.DoesNotExist, Option.DoesNotExist):
+#         return Response({'detail': 'Invalid user, agenda, or option.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     if Vote.objects.filter(user=user, agenda=agenda).exists():
+#         return Response({'detail': 'You have already voted for this agenda.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     # Create and save the vote
+#     vote = Vote(user=user, agenda=agenda, option=option)
+#     vote.save()
+
+#     # Update OptionVoteCount
+#     option_vote_count, created = OptionVoteCount.objects.get_or_create(option=option)
+#     option_vote_count.vote_count += 1
+#     option_vote_count.save()
+
+#     # Update AgendaVoteCount
+#     agenda_vote_count, created = AgendaVoteCount.objects.get_or_create(agenda=agenda)
+#     agenda_vote_count.vote_count += 1
+#     agenda_vote_count.save()
+
+#     # Send message to WebSocket group
+#     channel_layer = get_channel_layer()
+#     async_to_sync(channel_layer.group_send)(
+#         "vote_count_group",
+#         {
+#             "type": "update_vote_count",
+#         }
+#     )
+
+#     return Response({'detail': 'Vote submitted successfully.'}, status=status.HTTP_201_CREATED)
+
+
+
+
+# This is for creating 
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated]) 
+# def create_vote(request):
+#     username = request.data.get('username')  # Get username from request body
+#     agenda_id = request.data.get('agenda')
+#     option_id = request.data.get('option')
+
+#     try:
+#         user = User.objects.get(username=username)  # Fetch the user by username
+#         agenda = Agenda.objects.get(id=agenda_id)
+#         option = Option.objects.get(id=option_id)
+#     except (User.DoesNotExist, Agenda.DoesNotExist, Option.DoesNotExist):
+#         return Response({'detail': 'Invalid user, agenda, or option.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     if Vote.objects.filter(user=user, agenda=agenda).exists():
+#         return Response({'detail': 'You have already voted for this agenda.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     # Create and save the vote
+#     vote = Vote(user=user, agenda=agenda, option=option)
+#     vote.save()
+
+#     channel_layer = get_channel_layer()
+#     async_to_sync(channel_layer.group_send)(
+#         "vote_count_group",
+#         {
+#             "type": "update_vote_count",
+#         }
+#     )
+
+#     return Response({'detail': 'Vote submitted successfully.'}, status=status.HTTP_201_CREATED)

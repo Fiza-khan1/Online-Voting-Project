@@ -96,17 +96,19 @@ from .models import OptionVoteCount, AgendaVoteCount
 
 class OptionVoteCountSerializer(serializers.ModelSerializer):
     option_name = serializers.CharField(source='option.name', read_only=True)
-    agenda_title = serializers.CharField(source='option.agenda.name', read_only=True)  # Get agenda name through option
-    agenda_description = serializers.CharField(source='option.agenda.description', read_only=True)  # Get agenda description
+    agenda_title = serializers.CharField(source='option.agenda.name', read_only=True)
+    agenda_description = serializers.CharField(source='option.agenda.description', read_only=True)
 
     class Meta:
         model = OptionVoteCount
-        fields = ['option', 'option_name', 'agenda_title', 'agenda_description', 'vote_count']
+        fields = ['option_name', 'agenda_title', 'agenda_description', 'vote_count']
+
 
 class AgendaVoteCountSerializer(serializers.ModelSerializer):
     agenda_name = serializers.CharField(source='agenda.name', read_only=True)
-    agenda_title = serializers.CharField(source='agenda.name', read_only=True)
     agenda_description = serializers.CharField(source='agenda.description', read_only=True)
+
     class Meta:
         model = AgendaVoteCount
-        fields = ['agenda', 'agenda_name', 'agenda_title', 'agenda_description', 'vote_count']
+        fields = ['agenda_name', 'agenda_description', 'vote_count']
+
