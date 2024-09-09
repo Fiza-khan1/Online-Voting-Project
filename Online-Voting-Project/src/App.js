@@ -19,6 +19,8 @@ import CreateAgenda from './components/CreateAgenda';
 import UpcomingElection from './components/upcomming'
 import ElectionOptions from './components/ElectionOption'
 import ElectionResults from './components/result.js'
+import VoteCountDisplayOne from './components/result.js';
+import VoteCountDisplay from './components/VoteCountDsiplat.js'
 
 function App() {
   const { isAuthenticated } = useAuth();  // Removed logout as it's not used
@@ -31,6 +33,9 @@ function App() {
           <Route path="signup" element={<SignUpPage />} />
           <Route index element={<HomePage isAdmin={isAdmin} />} />
           <Route path="createagenda" element={<CreateAgenda />} />
+          <Route path="res" element={<VoteCountDisplayOne />} />
+          <Route path="websockets" element={<VoteCountDisplay/>} />
+
 
           
           

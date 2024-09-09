@@ -11,7 +11,6 @@ function CurrentElection() {
 
   useEffect(() => {
     const fetchElections = async () => {
-      // Retrieve token from localStorage
       const token = localStorage.getItem('authToken');
 
       if (!token) {

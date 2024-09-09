@@ -1,0 +1,19 @@
+/* Custom CSS for VoteCountDisplay */
+
+.container {
+    max-width: 900px;
+  }
+  
+  h1, h2 {
+    color: #343a40; /* Bootstrap's dark color for headings */
+  }
+  
+  .list-group-item {
+    border: 1px solid #dee2e6; /* Light border for list items */
+    border-radius: .25rem; /* Rounded corners */
+  }
+  
+  .alert {
+    border-radius: .25rem; /* Rounded corners for alerts */
+  }
+  
