@@ -3,20 +3,20 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Card from 'react-bootstrap/Card';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import './CssFolder/ElectionOption.css';
 
 function ElectionOption() {
   const [agenda, setAgenda] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [voteSuccess, setVoteSuccess] = useState(false);
   const [voteError, setVoteError] = useState(null);
-  const { id } = useParams(); // Get agenda ID from URL params
-  const navigate = useNavigate(); // For redirecting after voting
+  const { id } = useParams();
 
   useEffect(() => {
     const fetchAgenda = async () => {
       const token = localStorage.getItem('authToken');
-      
+
       if (!token) {
         console.error('No token found');
         setIsAuthenticated(false);
@@ -53,9 +53,8 @@ function ElectionOption() {
     fetchAgenda();
   }, [id]);
 
-  // Function to handle voting
   const handleVote = async (optionId) => {
-    let username = localStorage.getItem('username'); // Get username from local storage
+    let username = localStorage.getItem('username');
     const token = localStorage.getItem('authToken');
 
     if (!token || !username) {
@@ -68,12 +67,12 @@ function ElectionOption() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Token ${token}`,  // Use Token for authentication
+          'Authorization': `Token ${token}`,
         },
         body: JSON.stringify({
           username: username,
-          agenda: id,  // Agenda ID from the URL params
-          option: optionId,  // Option ID selected
+          agenda: id,
+          option: optionId,
         }),
       });
 
@@ -86,8 +85,6 @@ function ElectionOption() {
 
       setVoteSuccess(true);
       setVoteError(null);
-      // Optionally redirect or update UI after successful vote
-      // navigate('/some-route'); // Uncomment if you need to redirect
     } catch (error) {
       console.error('Vote error:', error);
       setVoteError('An error occurred while submitting your vote.');
@@ -100,20 +97,20 @@ function ElectionOption() {
   }
 
   return (
-    <Container className="mt-4">
-      <h2 className="text-center mb-4">Options for {agenda.name}</h2>
-      {voteError && <p className="text-danger">{voteError}</p>}
-      {voteSuccess && <p className="text-success">Your vote has been successfully submitted!</p>}
+    <Container className="election-option-container mt-4">
+      <h2 className="election-option-title text-center mb-4">Candidates for {agenda.name}</h2>
+      {voteError && <p className="election-option-text-danger">{voteError}</p>}
+      {voteSuccess && <p className="election-option-text-success">Your vote has been successfully submitted!</p>}
       <Row className="g-4">
         {agenda.options.length > 0 ? (
           agenda.options.map((option) => (
             <Col md={6} lg={4} key={option.id}>
-              <Card className="custom-card">
-                <Card.Body>
+              <Card className="election-option-card">
+                <Card.Body className="election-option-card-body">
                   <Card.Title>{option.name}</Card.Title>
                   <button
-                    className="btn btn-primary"
-                    onClick={() => handleVote(option.id)} // Handle vote submission
+                    className="election-option-btn"
+                    onClick={() => handleVote(option.id)}
                   >
                     Vote for {option.name}
                   </button>

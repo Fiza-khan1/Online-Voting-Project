@@ -1,0 +1,70 @@
+/* Container styling specific to ElectionOption component */
+.election-option-container {
+    max-width: 1200px; /* Adjust the maximum width of the container */
+    margin: 0 auto; /* Center the container horizontally */
+    padding: 20px; /* Add padding around the container */
+}
+
+/* Title styling specific to ElectionOption component */
+.election-option-title {
+    font-size: 1.8rem;
+    color: #004d40; /* Dark teal color for the title */
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* Card styling specific to ElectionOption component */
+.election-option-card {
+    background-color: #e0f7fa; /* Light cyan background for the card */
+    color: #004d40; /* Dark teal text color for better readability */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    margin: 10px 0; /* Margin between cards */
+}
+
+/* Card body styling specific to ElectionOption component */
+.election-option-card-body {
+    padding: 20px; /* Padding inside the card body */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+/* Button styling specific to ElectionOption component */
+.election-option-btn {
+    background-color: #00796b; /* Teal background for the button */
+    color: white;
+    border: none; /* Remove border */
+    border-radius: 5px; /* Rounded corners */
+    font-size: 1rem; /* Font size for the button text */
+    padding: 10px 20px; /* Padding inside the button */
+    transition: background-color 0.3s ease;
+    width: 200px; /* Smooth transition effect */
+}
+
+.election-option-btn:hover {
+    background-color: #004d40; /* Darker teal background on hover */
+}
+
+/* Error and success messages specific to ElectionOption component */
+.election-option-text-danger {
+    color: #d32f2f; /* Red color for error messages */
+    font-weight: bold;
+}
+
+.election-option-text-success {
+    color: #388e3c; /* Green color for success messages */
+    font-weight: bold;
+}
+
+/* Responsive styling specific to ElectionOption component */
+@media (max-width: 768px) {
+    .election-option-card {
+        margin: 10px 0; /* Margin between cards on small screens */
+    }
+    
+    .election-option-title {
+        font-size: 1.5rem; /* Smaller font size for the title on small screens */
+    }
+}

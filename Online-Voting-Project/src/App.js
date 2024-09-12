@@ -36,6 +36,7 @@ function App() {
           <Route path="createagenda" element={<CreateAgenda />} />
           <Route path="res" element={<VoteCountDisplayOne />} />
           <Route path="websockets" element={<VoteCountDisplay/>} />
+          <Route path="upcomming" element={<UpcomingElection />} />
           {isAuthenticated ? (
             <>
               <Route path="contact" element={<ContactPage />} />
