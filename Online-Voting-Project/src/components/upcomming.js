@@ -71,7 +71,7 @@ function UpcomingElection() {
                   <Card.Text><strong>Start Date:</strong> {new Date(election.start_date).toLocaleDateString()}</Card.Text>
                   <Card.Text><strong>End Date:</strong> {new Date(election.end_date).toLocaleDateString()}</Card.Text>
                   {isAuthenticated ? (
-                    <Link to={`/vote/${election.id}`} className="btn btn-primary">Vote Details</Link>
+                    <Link to={`/voting/${election.id}`} className="btn btn-primary">Vote Details</Link>
                   ) : (
                     <Link to="/login" className="btn btn-primary">Login to Vote</Link>
                   )}

@@ -35,10 +35,10 @@ function Home() {
           <Card className="custom-card">
             <Card.Img variant="top" src="https://picsum.photos/id/870/200/300?grayscale&blur=2" />
             <Card.Body>
-              <Card.Title>Upcoming Elections</Card.Title>
+              <Card.Title>Current Elections</Card.Title>
               <Card.Subtitle className="mb-2 text-muted">Get Ready</Card.Subtitle>
               <Card.Text>
-                Stay updated with the upcoming elections and make sure you are prepared to vote.
+                Stay updated with the current elections and make sure you are prepared to vote.
               </Card.Text>
               <Card.Link href="/current-elections" className="btn btn-primary">View Current Elections</Card.Link>
 
@@ -49,10 +49,10 @@ function Home() {
           <Card className="custom-card">
             <Card.Img variant="top" src="https://picsum.photos/seed/picsum/200/300" />
             <Card.Body>
-              <Card.Title>Current Voting</Card.Title>
+              <Card.Title>Upcomming Voting</Card.Title>
               <Card.Subtitle className="mb-2 text-muted">Participate Now</Card.Subtitle>
               <Card.Text>
-                Explore the ongoing voting sessions and make your voice heard.
+                Explore the upcomming voting sessions and make your voice heard.
               </Card.Text>
               <Card.Link href="/upcomming" className="btn btn-primary">View Upcomming Elections</Card.Link>
             </Card.Body>

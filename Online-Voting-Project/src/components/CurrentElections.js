@@ -13,23 +13,22 @@ function CurrentElection() {
     const fetchElections = async () => {
       const token = localStorage.getItem('authToken');
 
-      if (!token) {
-        console.error('No token found');
+      if (token) {
+        setIsAuthenticated(true); // Set as authenticated if token exists
+      } else {
         setIsAuthenticated(false); // Set as not authenticated if no token
-        return;
       }
 
       try {
-        const response = await fetch('http://127.0.0.1:8000/agendas/', {
+        const response = await fetch('http://127.0.0.1:8000/agendass/', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Token ${token}`,
+            ...(isAuthenticated && { 'Authorization': `Token ${token}` }), // Add token header if authenticated
           },
         });
 
         if (!response.ok) {
-          // Handle unauthorized status or any other error
           if (response.status === 401) {
             setIsAuthenticated(false); // Handle unauthorized
             console.error('Unauthorized access. Please log in.');
@@ -51,10 +50,8 @@ function CurrentElection() {
         );
 
         setElections(currentElections);
-        setIsAuthenticated(true); // Set as authenticated
       } catch (error) {
         console.error('Fetch error:', error);
-        setIsAuthenticated(false); // Set as not authenticated in case of error
       }
     };
 
@@ -74,6 +71,7 @@ function CurrentElection() {
                   <Card.Text>{election.description}</Card.Text>
                   <Card.Text><strong>Start Date:</strong> {new Date(election.start_date).toLocaleDateString()}</Card.Text>
                   <Card.Text><strong>End Date:</strong> {new Date(election.end_date).toLocaleDateString()}</Card.Text>
+                  {/* Show different button based on authentication status */}
                   {isAuthenticated ? (
                     <Link to={`/vote/${election.id}`} className="btn btn-primary">Vote Now</Link>
                   ) : (

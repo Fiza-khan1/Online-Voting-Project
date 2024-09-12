@@ -61,18 +61,20 @@ function VoteCountDisplay() {
       {error && <div className="alert alert-danger">{error}</div>}
 
       <h2 className="mb-3">Option Vote Counts</h2>
-      <ul className="list-group mb-4">
-        {optionVoteCounts.length > 0 ? (
-          optionVoteCounts.map(option => (
-            <li key={option.id} className="list-group-item">
-              <strong>Option Name: </strong> {option.name || "Option Name Missing"}<br />
-              <strong>Vote Count: </strong> {option.vote_count !== undefined ? option.vote_count : "Vote Count Missing"}
-            </li>
-          ))
-        ) : (
-          <p>No option vote counts available.</p>
-        )}
-      </ul>
+<ul className="list-group mb-4">
+  {optionVoteCounts.length > 0 ? (
+    optionVoteCounts.map(option => (
+      <li key={option.id} className="list-group-item">
+        <strong>Option Name: </strong> {option.name || "Option Name Missing"}<br />
+        <strong>Agenda Title: </strong> {option.agenda__name || "Agenda Title Missing"}<br />
+        <strong>Vote Count: </strong> {option.vote_count !== undefined ? option.vote_count : "Vote Count Missing"}
+      </li>
+    ))
+  ) : (
+    <p>No option vote counts available.</p>
+  )}
+</ul>
+
 
       <h2 className="mb-3">Agenda Counts</h2>
       <ul className="list-group">

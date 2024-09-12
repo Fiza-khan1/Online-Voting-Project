@@ -20,7 +20,6 @@ const CreateAgenda = () => {
   const [editingOptionId, setEditingOptionId] = useState(null);
   const [editingOptionValue, setEditingOptionValue] = useState('');
   const { isAuthenticated } = useAuth();
- 
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -90,48 +89,6 @@ const CreateAgenda = () => {
     }
   };
 
-  const handleEditOption = async () => {
-    if (editingOptionValue.trim() === '') {
-      alert('Please enter a new value for the option!');
-      return;
-    }
-  
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/options/${editingOptionId}/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Token ${localStorage.getItem('authToken')}`,
-        },
-        body: JSON.stringify({ 
-          name: editingOptionValue
-        }),
-      });
-  
-      if (!response.ok) {
-        throw new Error('Network response was not ok.');
-      }
-  
-      const data = await response.json();
-      setAgendaItems(
-        agendaItems.map((item) =>
-          item.id === data.agenda
-            ? {
-                ...item,
-                options: item.options.map((option) =>
-                  option.id === editingOptionId ? data : option
-                ),
-              }
-            : item
-        )
-      );
-      setEditingOptionId(null);
-      setEditingOptionValue('');
-    } catch (error) {
-      console.error('There has been a problem with your fetch operation:', error);
-    }
-  };
-
   const handleEditAgenda = async () => {
     if (
       editingAgenda.name.trim() === '' ||
@@ -144,7 +101,7 @@ const CreateAgenda = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/agendas/${editingAgendaId}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/agendas/${editingAgendaId}/edit/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +134,7 @@ const CreateAgenda = () => {
 
   const handleRemoveAgenda = async (id) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/agendas/${id}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/agendas/${id}/delete/`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -230,9 +187,49 @@ const CreateAgenda = () => {
     }
   };
 
+  const handleEditOption = async () => {
+    if (editingOptionValue.trim() === '') {
+      alert('Please enter a new value for the option!');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/options/${editingOptionId}/edit/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${localStorage.getItem('authToken')}`,
+        },
+        body: JSON.stringify({ name: editingOptionValue }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok.');
+      }
+
+      const data = await response.json();
+      setAgendaItems(
+        agendaItems.map((item) =>
+          item.id === data.agenda
+            ? {
+                ...item,
+                options: item.options.map((option) =>
+                  option.id === editingOptionId ? data : option
+                ),
+              }
+            : item
+        )
+      );
+      setEditingOptionId(null);
+      setEditingOptionValue('');
+    } catch (error) {
+      console.error('There has been a problem with your fetch operation:', error);
+    }
+  };
+
   const handleRemoveOption = async (agendaId, optionId) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/options/${optionId}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/options/${optionId}/delete/`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -299,7 +296,6 @@ const CreateAgenda = () => {
           <textarea
             id="agendaDescription"
             className="form-control"
-            rows="3"
             value={newAgendaDescription}
             onChange={(e) => setNewAgendaDescription(e.target.value)}
           />
@@ -308,105 +304,84 @@ const CreateAgenda = () => {
           Add Agenda
         </button>
       </div>
-      <div className="card p-4 mt-4">
-        <h3 className="mb-3">Add Option to Agenda</h3>
-        <div className="form-group">
-          <label htmlFor="selectAgenda">Select Agenda</label>
-          <select
-            id="selectAgenda"
-            className="form-control"
-            value={selectedAgendaId || ''}
-            onChange={(e) => setSelectedAgendaId(Number(e.target.value))}
-          >
-            <option value="">Select an agenda</option>
-            {agendaItems.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group">
-          <label htmlFor="optionName">Option Name</label>
-          <input
-            type="text"
-            id="optionName"
-            className="form-control"
-            value={newOption}
-            onChange={(e) => setNewOption(e.target.value)}
-          />
-        </div>
-        <button className="btn btn-primary mt-2" onClick={handleAddOption}>
-          Add Option
-        </button>
-      </div>
+
       <div className="card p-4 mt-4">
         <h3 className="mb-3">Agenda List</h3>
         {agendaItems.map((agenda) => (
-          <div key={agenda.id} className="mb-4">
+          <div key={agenda.id} className="agenda-item">
             <h4>{agenda.name}</h4>
             <p>
-              <strong>Start Date:</strong> {agenda.start_date}
+              {agenda.start_date} to {agenda.end_date}
             </p>
-            <p>
-              <strong>End Date:</strong> {agenda.end_date}
-            </p>
-            <p>
-              <strong>Description:</strong> {agenda.description}
-            </p>
+            <p>{agenda.description}</p>
             <button
-              className="btn btn-warning me-2"
+              className="btn btn-secondary mr-2"
               onClick={() => {
                 setEditingAgendaId(agenda.id);
                 setEditingAgenda({
                   name: agenda.name,
                   start_date: agenda.start_date,
                   end_date: agenda.end_date,
-                  description: agenda.description,
+                  description: agenda.description
                 });
               }}
             >
-              Edit Agenda
+              Edit
             </button>
             <button
               className="btn btn-danger"
               onClick={() => handleRemoveAgenda(agenda.id)}
             >
-              Remove Agenda
+              Delete
             </button>
-            {agenda.options.length > 0 && (
-              <div className="mt-3">
-                <h5>Options</h5>
-                <ul>
-                  {agenda.options.map((option) => (
-                    <li key={option.id}>
-                      {option.name}
-                      <button
-                        className="btn btn-warning btn-sm ms-2"
-                        onClick={() => {
-                          setEditingOptionId(option.id);
-                          setEditingOptionValue(option.name);
-                        }}
-                      >
-                        Edit Option
-                      </button>
-                      <button
-                        className="btn btn-danger btn-sm ms-2"
-                        onClick={() => handleRemoveOption(agenda.id, option.id)}
-                      >
-                        Remove Option
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <div className="form-group mt-3">
+              <label htmlFor={`option-${agenda.id}`}>Add Option</label>
+              <input
+                type="text"
+                id={`option-${agenda.id}`}
+                className="form-control"
+                value={newOption}
+                onChange={(e) => setNewOption(e.target.value)}
+              />
+              <button
+                className="btn btn-primary mt-2"
+                onClick={() => {
+                  setSelectedAgendaId(agenda.id);
+                  handleAddOption();
+                }}
+              >
+                Add Option
+              </button>
+            </div>
+            <ul className="list-group mt-3">
+              {agenda.options.map((option) => (
+                <li key={option.id} className="list-group-item">
+                  {option.name}
+                  <button
+                    className="btn btn-secondary btn-sm ml-2"
+                    onClick={() => {
+                      setEditingOptionId(option.id);
+                      setEditingOptionValue(option.name);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm ml-2"
+                    onClick={() => handleRemoveOption(agenda.id, option.id)}
+                  >
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         ))}
       </div>
+
       {editingAgendaId && (
         <div className="card p-4 mt-4">
-          <h3 className="mb-3">Edit Agenda</h3>
+          <h3>Edit Agenda</h3>
           <div className="form-group">
             <label htmlFor="editAgendaName">Agenda Name</label>
             <input
@@ -414,7 +389,9 @@ const CreateAgenda = () => {
               id="editAgendaName"
               className="form-control"
               value={editingAgenda.name}
-              onChange={(e) => setEditingAgenda({ ...editingAgenda, name: e.target.value })}
+              onChange={(e) =>
+                setEditingAgenda({ ...editingAgenda, name: e.target.value })
+              }
             />
           </div>
           <div className="form-group">
@@ -424,7 +401,9 @@ const CreateAgenda = () => {
               id="editAgendaStartDate"
               className="form-control"
               value={editingAgenda.start_date}
-              onChange={(e) => setEditingAgenda({ ...editingAgenda, start_date: e.target.value })}
+              onChange={(e) =>
+                setEditingAgenda({ ...editingAgenda, start_date: e.target.value })
+              }
             />
           </div>
           <div className="form-group">
@@ -434,7 +413,9 @@ const CreateAgenda = () => {
               id="editAgendaEndDate"
               className="form-control"
               value={editingAgenda.end_date}
-              onChange={(e) => setEditingAgenda({ ...editingAgenda, end_date: e.target.value })}
+              onChange={(e) =>
+                setEditingAgenda({ ...editingAgenda, end_date: e.target.value })
+              }
             />
           </div>
           <div className="form-group">
@@ -442,9 +423,10 @@ const CreateAgenda = () => {
             <textarea
               id="editAgendaDescription"
               className="form-control"
-              rows="3"
               value={editingAgenda.description}
-              onChange={(e) => setEditingAgenda({ ...editingAgenda, description: e.target.value })}
+              onChange={(e) =>
+                setEditingAgenda({ ...editingAgenda, description: e.target.value })
+              }
             />
           </div>
           <button className="btn btn-primary mt-2" onClick={handleEditAgenda}>
@@ -452,9 +434,10 @@ const CreateAgenda = () => {
           </button>
         </div>
       )}
+
       {editingOptionId && (
         <div className="card p-4 mt-4">
-          <h3 className="mb-3">Edit Option</h3>
+          <h3>Edit Option</h3>
           <div className="form-group">
             <label htmlFor="editOptionValue">Option Value</label>
             <input
