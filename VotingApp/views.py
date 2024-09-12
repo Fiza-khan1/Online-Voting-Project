@@ -11,7 +11,13 @@ from rest_framework.decorators import api_view, permission_classes
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.db.models import Count
+from rest_framework import viewsets
+from .models import Agenda
+from .serializers import AgendaSerializer
 
+class AgendaViewSet(viewsets.ModelViewSet):
+    queryset = Agenda.objects.all()
+    serializer_class = AgendaSerializer
 # Create your views here.
 class UserRegisterView(APIView):
     permission_classes = [AllowAny]
@@ -104,10 +110,29 @@ def profile_view(request):
     return Response({'error': 'Invalid request method'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 # agenda/views.py
-from rest_framework import viewsets
+from rest_framework import viewsets,mixins
+from rest_framework.generics import ListAPIView
 from .models import Agenda, Option
 from .serializers import AgendaSerializer, OptionSerializer
+from rest_framework.permissions import AllowAny
+class AgendaListView(ListAPIView):
+    queryset = Agenda.objects.all()
+    serializer_class = AgendaSerializer
+    permission_classes = [AllowAny]
 
+class AgendaDetailView(generics.RetrieveAPIView):
+    queryset = Agenda.objects.all()
+    serializer_class = AgendaSerializer
+    permission_classes = [AllowAny]
+
+class OptionViewSet(viewsets.ModelViewSet):
+    queryset = Option.objects.all()
+    serializer_class = OptionSerializer
+
+    def perform_create(self, serializer):
+        serializer.save() 
+
+from .serializers import AgendaSerializer, OptionSerializer
 class AgendaViewSet(viewsets.ModelViewSet):
     queryset = Agenda.objects.all()
     serializer_class = AgendaSerializer
@@ -116,8 +141,29 @@ class OptionViewSet(viewsets.ModelViewSet):
     queryset = Option.objects.all()
     serializer_class = OptionSerializer
 
-    def perform_create(self, serializer):
-        serializer.save() 
+    def destroy(self, request, *args, **kwargs):
+        option = self.get_object()
+        if not option.agenda:  # Assuming `agenda` is a foreign key
+            return Response(
+                {"detail": "Option must be associated with an agenda."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return super().destroy(request, *args, **kwargs)
+class AgendaUpdateView(generics.UpdateAPIView):
+    queryset = Agenda.objects.all()
+    serializer_class = AgendaSerializer
+
+class AgendaDeleteView(generics.DestroyAPIView):
+    queryset = Agenda.objects.all()
+    serializer_class = AgendaSerializer
+
+class OptionUpdateView(generics.UpdateAPIView):
+    queryset = Option.objects.all()
+    serializer_class = OptionSerializer
+
+class OptionDeleteView(generics.DestroyAPIView):
+    queryset = Option.objects.all()
+    serializer_class = OptionSerializer
 
 
 # VotingApp/views.py
@@ -231,11 +277,17 @@ from .models import Agenda, Option, Vote
 from django.contrib.auth.models import User
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-
+from django.contrib.auth.models import User
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from .models import Vote, Agenda, Option
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_vote(request):
-    # Fetch user, agenda, and option details
     username = request.data.get('username')
     agenda_id = request.data.get('agenda')
     option_id = request.data.get('option')
@@ -250,15 +302,36 @@ def create_vote(request):
     if Vote.objects.filter(user=user, agenda=agenda).exists():
         return Response({'detail': 'You have already voted for this agenda.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Save the vote
     Vote.objects.create(user=user, agenda=agenda, option=option)
 
-    # Send message to WebSocket group
     channel_layer = get_channel_layer()
+
     async_to_sync(channel_layer.group_send)(
         "vote_count_group",
         {
             "type": "update_vote_count",
+            "option_counts": get_option_counts(),
+            "agenda_counts": get_agenda_counts(),
+        }
+    )
+
+    # Notify all users
+    async_to_sync(channel_layer.group_send)(
+        "vote_notifications",
+        {
+            "type": "new_vote_notification",
+            "message": f"{user.username} voted for {option.name} in {agenda.name}.",
+            "option_id": option_id,
+            "agenda_id": agenda_id
+        }
+    )
+
+    # Notify the specific user
+    async_to_sync(channel_layer.group_send)(
+        f"user_{user.id}",  # Unique group name for the user
+        {
+            "type": "user_vote_notification",
+            "message": f'Your vote for {option.name} in {agenda.name} has been registered.',
         }
     )
 
@@ -272,7 +345,6 @@ def get_option_counts():
         .annotate(vote_count=Count('option_id'))
         .values('option_id', 'vote_count', 'option__name')
     )
-    
     return [
         {
             'id': option['option_id'],
@@ -290,7 +362,6 @@ def get_agenda_counts():
         .annotate(vote_count=Count('agenda_id'))
         .values('agenda_id', 'vote_count', 'agenda__name', 'agenda__description')
     )
-    
     return [
         {
             'id': agenda['agenda_id'],
@@ -300,6 +371,82 @@ def get_agenda_counts():
         }
         for agenda in agenda_counts
     ]
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def create_vote(request):
+#     # Fetch user, agenda, and option details
+#     username = request.data.get('username')
+#     agenda_id = request.data.get('agenda')
+#     option_id = request.data.get('option')
+
+#     try:
+#         user = User.objects.get(username=username)
+#         agenda = Agenda.objects.get(id=agenda_id)
+#         option = Option.objects.get(id=option_id)
+#     except (User.DoesNotExist, Agenda.DoesNotExist, Option.DoesNotExist):
+#         return Response({'detail': 'Invalid user, agenda, or option.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     if Vote.objects.filter(user=user, agenda=agenda).exists():
+#         return Response({'detail': 'You have already voted for this agenda.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     # Save the vote
+#     Vote.objects.create(user=user, agenda=agenda, option=option)
+
+#     # Send message to WebSocket group
+#     channel_layer = get_channel_layer()
+#     async_to_sync(channel_layer.group_send)(
+#         "vote_count_group",
+#         {
+#             "type": "update_vote_count",
+#         }
+#     )
+#     channel_layer = get_channel_layer()
+#     async_to_sync(channel_layer.group_send)(
+#         "vote_notifications",
+#         {
+#             "type": "update_vote_count",
+#             "option_id": option_id,
+#             "agenda_id": agenda_id
+#         }
+#     )
+#     return Response({'detail': 'Vote submitted successfully.'}, status=status.HTTP_201_CREATED)
+
+# def get_option_counts():
+#     option_counts = (
+#         Vote.objects
+#         .select_related('option')
+#         .values('option_id')
+#         .annotate(vote_count=Count('option_id'))
+#         .values('option_id', 'vote_count', 'option__name')
+#     )
+    
+#     return [
+#         {
+#             'id': option['option_id'],
+#             'name': option['option__name'],
+#             'vote_count': option['vote_count']
+#         }
+#         for option in option_counts
+#     ]
+
+# def get_agenda_counts():
+#     agenda_counts = (
+#         Vote.objects
+#         .select_related('agenda')
+#         .values('agenda_id')
+#         .annotate(vote_count=Count('agenda_id'))
+#         .values('agenda_id', 'vote_count', 'agenda__name', 'agenda__description')
+#     )
+    
+#     return [
+#         {
+#             'id': agenda['agenda_id'],
+#             'name': agenda['agenda__name'],
+#             'description': agenda['agenda__description'],
+#             'vote_count': agenda['vote_count']
+#         }
+#         for agenda in agenda_counts
+#     ]
 
 # @api_view(['POST'])
 # @api_view(['POST'])

@@ -1,10 +1,21 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from .models import Option,Agenda
 
 
 from rest_framework.validators import UniqueValidator
+class OptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Option
+        fields = ['id', 'name', 'agenda']
 
+class AgendaSerializer(serializers.ModelSerializer):
+    options = OptionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Agenda
+        fields = ['id', 'name', 'start_date', 'end_date', 'description', 'options']
 class UserRegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         required=True,
