@@ -15,6 +15,38 @@ from rest_framework import viewsets
 from .models import Agenda
 from .serializers import AgendaSerializer
 
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_GET
+
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.views import View
+from .models import Vote  # Ensure this import matches your project structure
+
+from django.http import JsonResponse
+from django.views import View
+from .models import Vote  # Make sure this import is correct
+
+class CheckVoteStatusView(View):
+    def get(self, request, *args, **kwargs):
+        agenda_id = self.kwargs.get('agenda_id')
+        user = request.user
+
+        if not agenda_id:
+            return JsonResponse({'detail': 'Agenda ID not provided'}, status=400)
+
+        if user.is_authenticated:
+            # Check if the user has voted for the given agenda
+            has_voted = Vote.objects.filter(user=user, agenda_id=agenda_id).exists()
+        else:
+            # Handle cases where the user is not authenticated
+            has_voted = False
+
+        return JsonResponse({'has_voted': has_voted})
+
+
+
+
 class AgendaViewSet(viewsets.ModelViewSet):
     queryset = Agenda.objects.all()
     serializer_class = AgendaSerializer

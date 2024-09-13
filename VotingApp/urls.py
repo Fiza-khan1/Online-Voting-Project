@@ -29,6 +29,8 @@ urlpatterns = [
     path('agendas/<int:pk>/delete/', AgendaDeleteView.as_view(), name='agenda-delete'),
     path('options/<int:pk>/edit/', OptionUpdateView.as_view(), name='option-update'),
     path('options/<int:pk>/delete/', OptionDeleteView.as_view(), name='option-delete'),
+     path('voting/check/<int:agenda_id>/', views.CheckVoteStatusView.as_view(), name='check_vote_status'),
+
     path('', include(router.urls)),
     # path('<str:groupname>/',views.index,name='index'),
    
