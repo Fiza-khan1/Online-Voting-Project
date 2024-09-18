@@ -1,11 +1,14 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
+from django.core.exceptions import ObjectDoesNotExist
+
 
 class VoteCountConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.group_name = "vote_count_group"
 
+        # Join the vote count group
         await self.channel_layer.group_add(
             self.group_name,
             self.channel_name
@@ -14,6 +17,7 @@ class VoteCountConsumer(AsyncWebsocketConsumer):
         await self.send_vote_counts()
 
     async def disconnect(self, close_code):
+        # Leave the vote count group
         await self.channel_layer.group_discard(
             self.group_name,
             self.channel_name
@@ -38,7 +42,7 @@ class VoteCountConsumer(AsyncWebsocketConsumer):
         return list(
             Option.objects
             .annotate(vote_count=Count('vote'))
-            .values('id', 'name', 'agenda__name', 'vote_count')
+            .values('id', 'name', 'vote_count')
         )
 
     @database_sync_to_async
@@ -52,43 +56,24 @@ class VoteCountConsumer(AsyncWebsocketConsumer):
             .values('id', 'name', 'description', 'vote_count')
         )
 
-from asgiref.sync import sync_to_async
-from channels.db import database_sync_to_async
-from asgiref.sync import sync_to_async
-
-import json
-from channels.generic.websocket import AsyncWebsocketConsumer
-from asgiref.sync import sync_to_async
-from channels.db import database_sync_to_async
-
 class NotificationConsumer(AsyncWebsocketConsumer):
-
     async def connect(self):
-        from rest_framework.authtoken.models import Token
-
         # Extract token from query parameters
-        token = self.scope['query_string'].decode().split('token=')[-1]
+        query_string = self.scope.get('query_string', b'').decode()
+        token = query_string.split('token=')[-1] if 'token=' in query_string else ''
+
+        # Try to authenticate the token asynchronously
+        self.user = await self.get_user_from_token(token)
+        
+        # Assign group names based on the user
         from django.contrib.auth.models import AnonymousUser
-        
-        if token:
-            # Try to authenticate the token asynchronously
-            try:
-                token_instance = await database_sync_to_async(Token.objects.get)(key=token)
-                self.user = await sync_to_async(lambda: token_instance.user)()
-            except Token.DoesNotExist:
-                self.user = AnonymousUser()
-        else:
-            self.user = AnonymousUser()
-        
-        # Assign group name based on the user
+
         if isinstance(self.user, AnonymousUser):
             self.user_group_name = "anonymous"
         else:
             self.user_group_name = f"user_{self.user.id}"
-        
+
         self.notification_group_name = "vote_notifications"
-        
-        print("User group name:", self.user_group_name)
 
         # Add the user to both the user and notification groups
         await self.channel_layer.group_add(
@@ -116,18 +101,33 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             self.channel_name
         )
 
+    # Async method to get user from token
+    @database_sync_to_async
+    def get_user_from_token(self, token):
+        try:
+            from rest_framework.authtoken.models import Token
+            token_instance = Token.objects.get(key=token)
+            return token_instance.user
+        except ObjectDoesNotExist:
+            from django.contrib.auth.models import AnonymousUser
+            return AnonymousUser()
+
     # Handler for 'user_vote_notification' event
     async def user_vote_notification(self, event):
         await self.send(text_data=json.dumps({
             'type': 'user_vote_notification',
             'message': event['message'],
+            'profile_picture': event.get('profile_picture', '')  ,
+             'timestamp': event.get('timestamp', '')
         }))
 
-    # Handler for 'new_vote_notification' event
+# Handler for 'new_vote_notification' event
     async def new_vote_notification(self, event):
         await self.send(text_data=json.dumps({
             'type': 'new_vote_notification',
             'message': event['message'],
             'option_id': event['option_id'],
-            'agenda_id': event['agenda_id']
+            'agenda_id': event['agenda_id'],
+            'profile_picture': event.get('profile_picture', '') ,
+            'timestamp': event.get('timestamp', '')
         }))

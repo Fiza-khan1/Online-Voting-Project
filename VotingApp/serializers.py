@@ -2,20 +2,68 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from .models import Option,Agenda
-
-
 from rest_framework.validators import UniqueValidator
+from rest_framework import serializers
+from .models import Agenda, Option
+from rest_framework import serializers
+from django.utils import timezone
+from .models import Agenda, Option
+
 class OptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Option
-        fields = ['id', 'name', 'agenda']
+        fields = ['id', 'name']
 
 class AgendaSerializer(serializers.ModelSerializer):
-    options = OptionSerializer(many=True, read_only=True)
+    options = OptionSerializer(many=True, required=False)
 
     class Meta:
         model = Agenda
-        fields = ['id', 'name', 'start_date', 'end_date', 'description', 'options']
+        fields = ['id', 'name', 'description', 'start_date', 'end_date', 'options']
+
+    def validate(self, data):
+        # Validate end_date is not in the past
+        if data['start_date'] < timezone.now().date():
+            raise serializers.ValidationError({'start_date': 'Start date cannot be in the past.'})
+
+        # Validate end_date is not in the past and must be after the start_date
+        if data['end_date'] < timezone.now().date():
+            raise serializers.ValidationError({'end_date': 'End date cannot be in the past.'})
+        if data['end_date'] < timezone.now().date():
+            raise serializers.ValidationError({'end_date': 'End date cannot be in the past.'})
+
+        return data
+
+    def validate_options(self, options):
+        # Validate there are at least 2 options
+        if len(options) < 2:
+            raise serializers.ValidationError('There must be at least 2 options.')
+
+        return options
+
+    def create(self, validated_data):
+        options_data = validated_data.pop('options', [])
+        agenda = Agenda.objects.create(**validated_data)
+        for option_data in options_data:
+            option, created = Option.objects.get_or_create(**option_data)
+            agenda.options.add(option)
+        return agenda
+
+    def update(self, instance, validated_data):
+        options_data = validated_data.pop('options', [])
+        instance.name = validated_data.get('name', instance.name)
+        instance.description = validated_data.get('description', instance.description)
+        instance.start_date = validated_data.get('start_date', instance.start_date)
+        instance.end_date = validated_data.get('end_date', instance.end_date)
+        instance.save()
+
+        # Update options
+        instance.options.clear()
+        for option_data in options_data:
+            option, created = Option.objects.get_or_create(**option_data)
+            instance.options.add(option)
+
+        return instance
 class UserRegisterSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         required=True,
@@ -57,10 +105,11 @@ from .models import UserProfile
 class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
+    is_superuser = serializers.BooleanField(source='user.is_superuser', read_only=True)  # Add superuser status
+
     class Meta:
         model = UserProfile
-        fields = ['id', 'bio', 'profile_picture', 'user', 'username', 'email']
-
+        fields = ['id', 'bio', 'profile_picture', 'user', 'username', 'email', 'is_superuser']  # Include is_superuser
 
 # agenda/serializers.py
 from .models import Agenda, Option
@@ -71,26 +120,10 @@ from .models import Option
 class OptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Option
-        fields = ['id', 'name', 'agenda']  # Ensure 'agenda' is included
+        fields = ['id', 'name', 'agenda']
+        # extra_kwargs = {'agenda': {'read_only': True}} # Ensure 'agenda' is included
 
 
-class AgendaSerializer(serializers.ModelSerializer):
-    options = OptionSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Agenda
-        fields = ['id', 'name', 'description', 'start_date', 'end_date', 'options']
-
-    def validate(self, data):
-        """
-        Check that the start_date is before the end_date.
-        """
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
-        if start_date and end_date and start_date >= end_date:
-            raise serializers.ValidationError("End date must be after the start date.")
-
-        return data
 
 # VotingApp/serializers.py
 

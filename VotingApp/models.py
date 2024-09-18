@@ -12,19 +12,43 @@ class UserProfile(models.Model):
 # agenda/models.py
 from django.db import models
 
+# class Agenda(models.Model):
+#     name = models.CharField(max_length=255)
+#     description = models.TextField()
+#     start_date = models.DateField()
+#     end_date = models.DateField()
+    
+#     def __str__(self):
+#         return self.name
+# class Option(models.Model):
+#     agenda = models.ForeignKey(Agenda, related_name='options', on_delete=models.CASCADE)
+#     name = models.CharField(max_length=255)
+#     def __str__(self):
+#         return self.name
+
+# models.py
+
+from django.db import models
+
+
+from django.db import models
+
+class Option(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
 class Agenda(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     start_date = models.DateField()
     end_date = models.DateField()
-    
+    options = models.ManyToManyField(Option, related_name='agendas')
+
     def __str__(self):
         return self.name
-class Option(models.Model):
-    agenda = models.ForeignKey(Agenda, related_name='options', on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    def __str__(self):
-        return self.name
+
 
 from django.contrib.auth.models import User
 
