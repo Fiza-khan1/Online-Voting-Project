@@ -10,8 +10,10 @@ function ElectionOptionUpcomming() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [voteSuccess, setVoteSuccess] = useState(false);
   const [voteError, setVoteError] = useState(null);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
   const { id } = useParams(); // Get agenda ID from URL params
-  const navigate = useNavigate(); // For redirecting after voting
+  const navigate = useNavigate(); // For redirecting after voting or deletion
 
   useEffect(() => {
     const fetchAgenda = async () => {
@@ -24,7 +26,7 @@ function ElectionOptionUpcomming() {
       }
 
       try {
-        const response = await fetch(`http://127.0.0.1:8000/agendas/${id}/`, {
+        const response = await fetch(`http://127.0.0.1:8000/routers/Newagendas/${id}/`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -55,8 +57,8 @@ function ElectionOptionUpcomming() {
 
   // Function to handle voting
   const handleVote = async (optionId) => {
-    let username = localStorage.getItem('username'); // Get username from local storage
     const token = localStorage.getItem('authToken');
+    const username = localStorage.getItem('username');
 
     if (!token || !username) {
       console.error('No token or username found');
@@ -68,7 +70,7 @@ function ElectionOptionUpcomming() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Token ${token}`,  // Use Token for authentication
+          'Authorization': `Token ${token}`,
         },
         body: JSON.stringify({
           username: username,
@@ -86,12 +88,46 @@ function ElectionOptionUpcomming() {
 
       setVoteSuccess(true);
       setVoteError(null);
-      // Optionally redirect or update UI after successful vote
-      // navigate('/some-route'); // Uncomment if you need to redirect
     } catch (error) {
       console.error('Vote error:', error);
       setVoteError('An error occurred while submitting your vote.');
       setVoteSuccess(false);
+    }
+  };
+
+  // Function to handle deletion
+  const handleDelete = async () => {
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/routers/Newagendas/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setDeleteError(errorData.detail || 'Failed to delete agenda');
+        setDeleteSuccess(false);
+        return;
+      }
+
+      setDeleteSuccess(true);
+      setDeleteError(null);
+      // Optionally redirect or update UI after successful delete
+      navigate('/some-route'); // Redirect to a different route if needed
+    } catch (error) {
+      console.error('Delete error:', error);
+      setDeleteError('An error occurred while deleting the agenda.');
+      setDeleteSuccess(false);
     }
   };
 
@@ -101,9 +137,11 @@ function ElectionOptionUpcomming() {
 
   return (
     <Container className="mt-4">
-      <h2 className="text-center mb-4">Options for  {agenda.name}</h2>
+      <h2 className="text-center mb-4">Options for {agenda.name}</h2>
       {voteError && <p className="text-danger">{voteError}</p>}
       {voteSuccess && <p className="text-success">Your vote has been successfully submitted!</p>}
+      {deleteError && <p className="text-danger">{deleteError}</p>}
+      {deleteSuccess && <p className="text-success">The agenda has been successfully deleted!</p>}
       <Row className="g-4">
         {agenda.options.length > 0 ? (
           agenda.options.map((option) => (
@@ -111,9 +149,10 @@ function ElectionOptionUpcomming() {
               <Card className="custom-card">
                 <Card.Body>
                   <Card.Title>{option.name}</Card.Title>
-                  <button disabled
+                  <button
                     className="btn btn-primary"
-                    onClick={() => handleVote(option.id)} // Handle vote submission
+                    onClick={() => handleVote(option.id)}
+                    disabled={true} // Disable the button
                   >
                     Vote for {option.name}
                   </button>
@@ -131,6 +170,7 @@ function ElectionOptionUpcomming() {
           </Col>
         )}
       </Row>
+    
     </Container>
   );
 }

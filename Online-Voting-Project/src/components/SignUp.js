@@ -35,9 +35,9 @@ function SignUpPage() {
         const jsonResponse = await response.json();
         console.log('User registered successfully:', jsonResponse);
         // login(jsonResponse.token);
-        login(jsonResponse.token);
+        // login(jsonResponse.token);
         alert('User registered successfully');
-        navigate('/dashboard');
+        navigate('/login');
 
         // Handle the successful registration, e.g., redirect to login page
       } else {
@@ -92,7 +92,6 @@ function SignUpPage() {
             required
           />
         </Form.Group>
-
         <Form.Group controlId="formPassword">
           <Form.Label>Password</Form.Label>
           <Form.Control
@@ -102,7 +101,6 @@ function SignUpPage() {
             required
           />
         </Form.Group>
-
         <Button variant="primary" type="submit" className="mt-3">
           Sign Up
         </Button>

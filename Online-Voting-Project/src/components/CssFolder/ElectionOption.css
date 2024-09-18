@@ -1,70 +1,88 @@
-/* Container styling specific to ElectionOption component */
-.election-option-container {
-    max-width: 1200px; /* Adjust the maximum width of the container */
-    margin: 0 auto; /* Center the container horizontally */
-    padding: 20px; /* Add padding around the container */
+/* Container styling */
+.current-elections-page {
+    background-color: white;
+    min-height: 100vh;
+    padding: 20px;
 }
 
-/* Title styling specific to ElectionOption component */
-.election-option-title {
-    font-size: 1.8rem;
-    color: #004d40; /* Dark teal color for the title */
-    font-weight: bold;
-    margin-bottom: 20px;
-}
-
-/* Card styling specific to ElectionOption component */
+/* Card styling */
 .election-option-card {
-    background-color: #e0f7fa; /* Light cyan background for the card */
-    color: #004d40; /* Dark teal text color for better readability */
+    background-color: #e0f7fa;
+    color: #004d40;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    margin: 10px 0; /* Margin between cards */
+    margin: 10px;
 }
 
-/* Card body styling specific to ElectionOption component */
-.election-option-card-body {
-    padding: 20px; /* Padding inside the card body */
+/* Row styling */
+.election-option-row {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    justify-content: space-evenly;
+    justify-content: space-between;
+    margin-bottom: 10px;
 }
 
-/* Button styling specific to ElectionOption component */
+/* Title styling */
+.election-option-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Description styling */
+.election-option-description {
+    margin-bottom: 15px;
+}
+
+/* Button styling */
 .election-option-btn {
-    background-color: #00796b; /* Teal background for the button */
+    background-color: #00796b;
     color: white;
-    border: none; /* Remove border */
-    border-radius: 5px; /* Rounded corners */
-    font-size: 1rem; /* Font size for the button text */
-    padding: 10px 20px; /* Padding inside the button */
-    transition: background-color 0.3s ease;
-    width: 200px; /* Smooth transition effect */
+    border: none;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    padding: 8px 16px;
+    transition: background-color 0.3s ease, filter 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
 }
 
 .election-option-btn:hover {
-    background-color: #004d40; /* Darker teal background on hover */
+    background-color: #004d40;
 }
 
-/* Error and success messages specific to ElectionOption component */
-.election-option-text-danger {
-    color: #d32f2f; /* Red color for error messages */
-    font-weight: bold;
+.election-option-btn.disabled {
+    background-color: #b2dfdb;
+    color: #004d40;
+    filter: grayscale(50%) brightness(80%);
+    cursor: not-allowed;
 }
 
+/* Change Vote Button styling */
+.election-option-change-btn {
+    background-color: #004d40;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    padding: 8px 16px;
+    margin-top: 20px;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.election-option-change-btn:hover {
+    background-color: #00332d;
+}
+
+/* Success and Error Messages */
 .election-option-text-success {
-    color: #388e3c; /* Green color for success messages */
+    color: green;
     font-weight: bold;
 }
 
-/* Responsive styling specific to ElectionOption component */
-@media (max-width: 768px) {
-    .election-option-card {
-        margin: 10px 0; /* Margin between cards on small screens */
-    }
-    
-    .election-option-title {
-        font-size: 1.5rem; /* Smaller font size for the title on small screens */
-    }
+.election-option-text-danger {
+    color: red;
+    font-weight: bold;
 }

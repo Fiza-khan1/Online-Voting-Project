@@ -12,22 +12,23 @@ function Home() {
   useEffect(() => {
     const fetchProfileData = async () => {
       const token = localStorage.getItem('authToken'); // Retrieve token from localStorage
-
+  
       try {
         const response = await fetch('http://127.0.0.1:8000/profile/', {
           headers: {
             'Authorization': `Token ${token}`, // Include token in request headers
           },
         });
-
+  
         if (response.ok) {
           const profileData = await response.json();
           console.log('Fetched profile data:', profileData);
           setUser(profileData);
           setFormData(profileData);
-
-          // Store user's name in localStorage and state
+  
+          // Store user's name and superuser status in localStorage and state
           localStorage.setItem('username', profileData.username);
+          localStorage.setItem('is_superuser', profileData.is_superuser);  // Store superuser status
           setUsername(profileData.username);
         } else {
           console.error('Failed to fetch profile:', await response.json());
@@ -36,24 +37,27 @@ function Home() {
         console.error('Error:', error);
       }
     };
-
+  
     fetchProfileData();
-  }, []); // Empty dependency array ensures this runs once on component mount
-
+  }, []);
+  
   return (
     <Container className="mt-4 custom-container">
       <h1 className="text-center mb-3 custom-heading">Welcome to the Voting System</h1>
 
-      <div className="large-box p-3">
-        <Row className="mb-3 custom-row admin-row">
-          {username === 'admin' && (
+    
+   
+          {localStorage.getItem('is_superuser') === 'true' && ( 
+          
+                 <Row className="mb-3 custom-row admin-row"> 
             <Col>
               <h2 className="row-heading">Create Agenda (Admin Access Only)</h2>
               <p>Create and manage voting agendas for the platform.</p>
               <a href="/agendas" className="btn custom-btn">Create Agenda</a>
             </Col>
+            </Row>
           )}
-        </Row>
+    
 
         <Row className="mb-3 custom-row election-row">
           <Col md={6}>
@@ -75,7 +79,7 @@ function Home() {
             <a href="/results" className="btn custom-btn">View Results</a>
           </Col>
         </Row>
-      </div>
+ 
     </Container>
   );
 }

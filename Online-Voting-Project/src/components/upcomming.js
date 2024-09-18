@@ -3,24 +3,32 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Card from 'react-bootstrap/Card';
-import { Link } from 'react-router-dom';
+import { FaEdit, FaTrash } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import AgendaForm from './test';
+import axios from 'axios';
 
-function UpcomingElection() {
-  const [elections, setElections] = useState([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Adjust as needed
+function ElectionOptionUpcomming() {
+  const [agendas, setAgendas] = useState([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [voteError, setVoteError] = useState(null);
+  const [isSuperuser, setIsSuperuser] = useState(false);
+  const [selectedAgenda, setSelectedAgenda] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [deleteError, setDeleteError] = useState(null); // Add state for delete errors
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchElections = async () => {
+    const fetchAgendas = async () => {
       const token = localStorage.getItem('authToken');
-
+      
       if (!token) {
-        console.error('No token found');
-        setIsAuthenticated(false); // Set as not authenticated if no token
+        setIsAuthenticated(false);
         return;
       }
 
       try {
-        const response = await fetch('http://127.0.0.1:8000/agendas/', {
+        const response = await fetch('http://127.0.0.1:8000/routers/Newagendas/', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -29,52 +37,188 @@ function UpcomingElection() {
         });
 
         if (!response.ok) {
-          // Handle unauthorized status or any other error
           if (response.status === 401) {
-            setIsAuthenticated(false); // Handle unauthorized
-            console.error('Unauthorized access. Please log in.');
+            setIsAuthenticated(false);
             return;
           }
           throw new Error('Network response was not ok');
         }
 
         const data = await response.json();
-
-        // Get today's date in YYYY-MM-DD format
         const today = new Date().toISOString().split('T')[0];
-
-        // Filter elections to include only those whose start date is in the future
-        const upcomingElections = data.filter(election => new Date(election.start_date) > new Date(today));
-
-        setElections(upcomingElections);
-        setIsAuthenticated(true); // Set as authenticated
+        const upcomingAgendas = data.filter(agenda => agenda.start_date > today);
+        setAgendas(upcomingAgendas);
+        setIsAuthenticated(true);
+        
+        const superuser = localStorage.getItem('is_superuser');
+        setIsSuperuser(superuser === 'true');
       } catch (error) {
-        console.error('Fetch error:', error);
-        setIsAuthenticated(false); // Set as not authenticated in case of error
+        setIsAuthenticated(false);
       }
     };
 
-    fetchElections();
-  }, []); // Empty dependency array means this runs once on component mount
+    fetchAgendas();
+  }, []);
+
+  const handleViewDetails = (agendaId) => {
+    navigate(`/voting/${agendaId}`);
+  };
+
+  const handleEditClick = (agenda) => {
+    setSelectedAgenda(agenda);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (agendaId) => {
+    const token = localStorage.getItem('authToken');
+    try {
+      await axios.delete(`http://127.0.0.1:8000/routers/Newagendas/${agendaId}/`, {
+        headers: {
+          'Authorization': `Token ${token}`,
+        },
+      });
+
+      setAgendas(agendas.filter(agenda => agenda.id !== agendaId));
+      setDeleteError(null); // Clear error message on success
+    } catch (error) {
+      setDeleteError('Error deleting agenda. Please try again later.');
+    }
+  };
+
+  const handleSave = (agenda) => {
+    setShowForm(false);
+    setSelectedAgenda(null);
+    const fetchAgendas = async () => {
+      const token = localStorage.getItem('authToken');
+      try {
+        const response = await fetch('http://127.0.0.1:8000/routers/Newagendas/', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${token}`,
+          },
+        });
+        const data = await response.json();
+        const today = new Date().toISOString().split('T')[0];
+        const upcomingAgendas = data.filter(agenda => agenda.start_date > today);
+        setAgendas(upcomingAgendas);
+      } catch (error) {
+        console.error('Fetch error:', error);
+      }
+    };
+
+    fetchAgendas();
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setSelectedAgenda(null);
+  };
+
+  const cardStyle = {
+    backgroundColor: '#ffffff',
+    borderRadius: '10px',
+    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+    margin: '10px',
+  };
+
+  const cardHeaderStyle = {
+    backgroundColor: '#f5f5f5',
+    borderBottom: '1px solid #ddd',
+    padding: '10px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  };
+
+  const iconStyle = {
+    cursor: 'pointer',
+    fontSize: '1.3rem',
+    marginLeft: '10px', // Added margin for spacing between icons
+  };
+
+  const editIconStyle = {
+    color: '#007bff',
+  };
+
+  const deleteIconStyle = {
+    color: '#dc3545',
+  };
+
+  const buttonStyle = {
+    backgroundColor: '#00796B',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '5px',
+    padding: '8px 10px',
+    fontSize: '0.8rem',
+    cursor: 'pointer',
+    marginTop: '10px',
+    textAlign: 'center',
+    textDecoration: 'none',
+    display: 'block',
+  };
+
+  const descriptionTextStyle = {
+    fontSize: '0.9rem',
+    color: '#333',
+    padding: '10px',
+  };
+
+  const cardBodyStyle = {
+    padding: '10px',
+  };
+
+  if (showForm) {
+    return (
+      <Container className="mt-4">
+        <h2>Edit Agenda</h2>
+        <AgendaForm
+          agendaId={selectedAgenda ? selectedAgenda.id : null}
+          onSave={handleSave}
+          onCancel={handleCancel}
+        />
+      </Container>
+    );
+  }
+
+  if (agendas.length === 0) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <Container className="mt-4">
       <h2 className="text-center mb-4">Upcoming Elections</h2>
-      <Row className="g-4">
-        {elections.length > 0 ? (
-          elections.map((election) => (
-            <Col md={6} lg={4} key={election.id}>
-              <Card className="custom-card">
-                <Card.Body>
-                  <Card.Title>{election.name}</Card.Title>
-                  <Card.Text>{election.description}</Card.Text>
-                  <Card.Text><strong>Start Date:</strong> {new Date(election.start_date).toLocaleDateString()}</Card.Text>
-                  <Card.Text><strong>End Date:</strong> {new Date(election.end_date).toLocaleDateString()}</Card.Text>
-                  {isAuthenticated ? (
-                    <Link to={`/voting/${election.id}`} className="btn btn-primary">Vote Details</Link>
-                  ) : (
-                    <Link to="/login" className="btn btn-primary">Login to Vote</Link>
+      {voteError && <p className="text-danger">{voteError}</p>}
+      {deleteError && <p className="text-danger">{deleteError}</p>} {/* Show delete error */}
+      <Row>
+        {agendas.length > 0 ? (
+          agendas.map((agenda) => (
+            <Col xs={12} sm={6} md={6} lg={6} xl={6} key={agenda.id} className="mb-4">
+              <Card className="custom-card" style={cardStyle}>
+                <Card.Header style={cardHeaderStyle}>
+                  <h5>{agenda.name}</h5>
+                  {isSuperuser && (
+                    <div className="card-actions">
+                      <FaEdit
+                        onClick={() => handleEditClick(agenda)}
+                        style={{ ...iconStyle, ...editIconStyle }}
+                      />
+                      <FaTrash
+                        onClick={() => handleDelete(agenda.id)}
+                        style={{ ...iconStyle, ...deleteIconStyle }}
+                      />
+                    </div>
                   )}
+                </Card.Header>
+                <Card.Body style={cardBodyStyle}>
+                  <Card.Text style={descriptionTextStyle}>{agenda.description}</Card.Text>
+                  <button
+                    onClick={() => handleViewDetails(agenda.id)}
+                    style={buttonStyle}
+                  >
+                    View Details
+                  </button>
                 </Card.Body>
               </Card>
             </Col>
@@ -93,4 +237,4 @@ function UpcomingElection() {
   );
 }
 
-export default UpcomingElection;
+export default ElectionOptionUpcomming;

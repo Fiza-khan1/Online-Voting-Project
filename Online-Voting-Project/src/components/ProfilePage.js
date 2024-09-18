@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext'; // Import AuthContext
-import './CssFolder/profile.css'; // Import your custom CSS
+import { FaEdit } from 'react-icons/fa'; // Import edit icon
 
 const UserProfile = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, updateUserProfile } = useAuth(); // Add updateUserProfile
   const [user, setUser] = useState({
     profile_picture: '',
     username: '',
@@ -13,23 +13,26 @@ const UserProfile = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(user);
+  const [previewPicture, setPreviewPicture] = useState('');
 
   const fetchProfile = async () => {
-    const token = localStorage.getItem('authToken'); // Retrieve token from localStorage
+    const token = localStorage.getItem('authToken');
     try {
       const response = await fetch('http://127.0.0.1:8000/profile/', {
         headers: {
-          'Authorization': `Token ${token}`, // Include token in request headers
+          'Authorization': `Token ${token}`,
         },
       });
 
       if (response.ok) {
         const profileData = await response.json();
-        console.log('Fetched profile data:', profileData);
         setUser(profileData);
         setFormData(profileData);
-
-        // Store user's name in localStorage
+        setPreviewPicture(
+          profileData.profile_picture
+            ? `http://127.0.0.1:8000${profileData.profile_picture}`
+            : `https://ui-avatars.com/api/?name=${profileData.username}&background=random`
+        );
         localStorage.setItem('username', profileData.username);
       } else {
         console.error('Failed to fetch profile:', await response.json());
@@ -47,16 +50,19 @@ const UserProfile = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
+    if (name === 'profile_picture' && files) {
+      const file = files[0];
+      setPreviewPicture(URL.createObjectURL(file)); // Preview the selected image
+    }
     setFormData({
       ...formData,
-      [name]: files ? files[0] : value, // Handle file input
+      [name]: files ? files[0] : value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const token = localStorage.getItem('authToken'); // Retrieve token from localStorage
+    const token = localStorage.getItem('authToken');
     const dataToUpdate = new FormData();
 
     dataToUpdate.append('bio', formData.bio);
@@ -64,11 +70,11 @@ const UserProfile = () => {
       dataToUpdate.append('profile_picture', formData.profile_picture);
     }
     dataToUpdate.append('email', formData.email);
-    dataToUpdate.append('user', user.id); // Include the user ID
+    dataToUpdate.append('user', user.id);
 
     try {
       const response = await fetch('http://127.0.0.1:8000/profile/', {
-        method: 'PUT', // Assuming you are updating the profile
+        method: 'PUT',
         headers: {
           'Authorization': `Token ${token}`,
         },
@@ -79,50 +85,65 @@ const UserProfile = () => {
         const updatedProfile = await response.json();
         setUser(updatedProfile);
         setIsEditing(false);
-
-        // Update the stored user's name in localStorage
+        setPreviewPicture(
+          updatedProfile.profile_picture
+            ? `http://127.0.0.1:8000${updatedProfile.profile_picture}`
+            : `https://ui-avatars.com/api/?name=${updatedProfile.username}&background=random`
+        );
         localStorage.setItem('username', updatedProfile.username);
+        updateUserProfile(updatedProfile); // Update context
       } else {
-        const errorText = await response.text();
-        console.error('Failed to update profile:', errorText);
+        console.error('Failed to update profile:', await response.text());
       }
     } catch (error) {
       console.error('Error:', error);
     }
   };
 
+  const handleCancel = () => {
+    setIsEditing(false);
+    setPreviewPicture(
+      user.profile_picture
+        ? `http://127.0.0.1:8000${user.profile_picture}`
+        : `https://ui-avatars.com/api/?name=${user.username}&background=random`
+    );
+  };
+
   return (
-    <div className="container">
-      <div className="profile-card">
-        <img
-          src={user.profile_picture ? `http://127.0.0.1:8000${user.profile_picture}` : 'https://picsum.photos/id/870/200/300?grayscale&blur=2'}
-          alt="Profile"
-          className="profile-img"
-          onError={(e) => e.target.src = 'https://picsum.photos/id/870/200/300?grayscale&blur=2'} // Fallback image in case of error
-        />
+    <div style={containerProfileStyle}>
+      <div style={profileCardStyle}>
+        {/* Edit button placed absolutely in the top-right corner */}
+        <div style={editButtonContainerStyle}>
+          {!isEditing && (
+            <button onClick={() => setIsEditing(true)} style={btnEditStyle}>
+              <FaEdit />
+            </button>
+          )}
+        </div>
+
+        <div style={avatarContainerStyle}>
+          <img
+            src={previewPicture}
+            alt="Profile"
+            style={profileImgStyle}
+            onError={(e) =>
+              (e.target.src = `https://ui-avatars.com/api/?name=${user.username}&background=random`)
+            } // Fallback to avatar if image fails to load
+          />
+        </div>
+
         {isEditing ? (
-          <form onSubmit={handleSubmit} className="profile-form">
-            <div className="form-group">
-              <label htmlFor="profile_picture">Profile Picture</label>
+          <form onSubmit={handleSubmit} style={profileFormStyle}>
+            <div style={formRowStyle}>
               <input
                 type="file"
                 id="profile_picture"
                 name="profile_picture"
                 onChange={handleChange}
+                style={fileInputStyle}
               />
             </div>
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                disabled
-              />
-            </div>
-            <div className="form-group">
+            <div style={formRowStyle}>
               <label htmlFor="email">Email</label>
               <input
                 type="email"
@@ -130,26 +151,33 @@ const UserProfile = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                style={inputStyle}
               />
             </div>
-            <div className="form-group">
+            <div style={formRowStyle}>
               <label htmlFor="bio">Bio</label>
               <textarea
                 id="bio"
                 name="bio"
                 value={formData.bio}
                 onChange={handleChange}
+                style={textareaStyle}
               />
             </div>
-            <button type="submit" className="btn btn-primary">Save</button>
-            <button type="button" onClick={() => setIsEditing(false)} className="btn btn-secondary">Cancel</button>
+            <div style={formButtonsStyle}>
+              <button type="submit" style={btnSaveStyle}>
+                Save
+              </button>
+              <button type="button" onClick={handleCancel} style={btnCancelStyle}>
+                Cancel
+              </button>
+            </div>
           </form>
         ) : (
-          <div className="profile-info">
-            <h2 className="profile-username">{user.username}</h2>
-            <p className="profile-email">{user.email || 'No email provided'}</p>
-            <p className="profile-bio">{user.bio || 'No bio available'}</p>
-            <button onClick={() => setIsEditing(true)} className="btn btn-primary">Edit Profile</button>
+          <div style={profileInfoStyle}>
+            <h2 style={profileUsernameStyle}>{user.username}</h2>
+            <p style={profileEmailStyle}>{user.email || 'No email provided'}</p>
+            <p style={profileBioStyle}>{user.bio || 'No bio available'}</p>
           </div>
         )}
       </div>
@@ -157,4 +185,135 @@ const UserProfile = () => {
   );
 };
 
+// Inline styling
+const containerProfileStyle = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  height: '100vh',
+  backgroundColor: '#f5f5f5',
+  padding: '20px',
+};
+
+const profileCardStyle = {
+  maxWidth: '600px',
+  width: '100%',
+  padding: '20px',
+  borderRadius: '10px',
+  backgroundColor: '#fff',
+  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+  textAlign: 'left',
+  boxSizing: 'border-box',
+  overflow: 'auto',
+  position: 'relative', // Allow absolute positioning of child elements
+};
+
+const avatarContainerStyle = {
+  display: 'flex',
+  flexDirection: 'column', // Stack the image and button vertically
+  alignItems: 'center', // Centers items horizontally
+};
+
+const profileImgStyle = {
+  width: '100px', // Adjusted size for profile picture
+  height: '100px',
+  borderRadius: '50%',
+  objectFit: 'cover',
+};
+
+const editButtonContainerStyle = {
+  position: 'absolute',
+  top: '10px',
+  right: '10px',
+};
+
+const btnEditStyle = {
+  border: 'none',
+  backgroundColor: 'transparent',
+  cursor: 'pointer',
+  fontSize: '22px',
+  color: 'blue',
+};
+
+const profileFormStyle = {
+  width: '100%',
+};
+
+const formRowStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  marginBottom: '10px',
+};
+
+const fileInputStyle = {
+  width: '100%',
+  marginBottom: '10px',
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px',
+  borderRadius: '5px',
+  border: '1px solid #ddd',
+  boxSizing: 'border-box',
+};
+
+const textareaStyle = {
+  width: '100%',
+  height: '150px', // Larger height for the bio textarea
+  padding: '10px',
+  borderRadius: '5px',
+  border: '1px solid #ddd',
+  boxSizing: 'border-box',
+};
+
+const formButtonsStyle = {
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: '10px',
+};
+
+const btnSaveStyle = {
+  padding: '8px 16px',
+  backgroundColor: '#28a745',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer',
+  fontSize: '16px',
+};
+
+const btnCancelStyle = {
+  padding: '8px 16px',
+  backgroundColor: '#dc3545',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '5px',
+  cursor: 'pointer',
+  fontSize: '16px',
+};
+
+const profileInfoStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  textAlign: 'center',
+};
+
+const profileUsernameStyle = {
+  fontSize: '24px',
+  fontWeight: 'bold',
+  marginBottom: '10px',
+};
+
+const profileEmailStyle = {
+  fontSize: '18px',
+  color: '#777',
+  marginBottom: '10px',
+};
+
+const profileBioStyle = {
+  fontSize: '16px',
+  color: '#555',
+};
 export default UserProfile;

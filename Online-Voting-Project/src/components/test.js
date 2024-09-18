@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const CreateAgenda = ({ agendaId, onSave, onCancel }) => {
+const AgendaForm = ({ agendaId, onSave, onCancel }) => {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -280,5 +280,4 @@ const btnCancelStyle = {
     fontSize: '16px'
 };
 
-export default CreateAgenda;
- ;
+export default AgendaForm;
