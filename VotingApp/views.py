@@ -650,13 +650,25 @@ from asgiref.sync import async_to_sync
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from datetime import datetime
+
+
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils import timezone
+from django.core.cache import cache
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from .models import Agenda, Option, Vote, UserProfile
+from django.contrib.auth.models import User
+
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def create_vote(request):
     username = request.data.get('username')
     agenda_id = request.data.get('agenda')
     option_id = request.data.get('option')
-    
+
     try:
         user = User.objects.get(username=username)
         user_profile = UserProfile.objects.get(user=user)
@@ -666,55 +678,48 @@ def create_vote(request):
         return Response({'detail': 'Invalid user, agenda, or option.'}, status=status.HTTP_400_BAD_REQUEST)
 
     profile_picture_url = user_profile.profile_picture.url if user_profile.profile_picture else None
-    print("Profile picture ", profile_picture_url)  # Verify if profile picture URL is correctly set
 
     existing_vote = Vote.objects.filter(user=user, agenda=agenda).first()
 
     if existing_vote:
         existing_vote.option = option
         existing_vote.save()
-        timestamp = timezone.now().isoformat()
+        message = f'Your vote for {option.name} in {agenda.name} has been updated successfully.'
+    else:
+        Vote.objects.create(user=user, agenda=agenda, option=option)
+        message = f'{user.username} voted for {option.name} in {agenda.name}.'
 
-        async_to_sync(get_channel_layer().group_send)(
+    # Send WebSocket updates for the vote counts
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "vote_count_group",
+        {
+            "type": "update_vote_count",
+        }
+    )
+
+    async_to_sync(get_channel_layer().group_send)(
             f"user_{user.id}",
             {
                 "type": "user_vote_notification",
                 "message": f'Your vote for {option.name} in {agenda.name} has been updated successfully ',
                 "profile_picture": profile_picture_url,  # Ensure profile picture is part of this message
-                 "timestamp": timestamp
+                "timestamp": timezone.now().isoformat(),
             }
         )
-    else:
-        Vote.objects.create(user=user, agenda=agenda, option=option)
-
-    channel_layer = get_channel_layer()
-
-    # Send vote count updates
-    async_to_sync(channel_layer.group_send)(
-        "vote_count_group",
-        {
-            "type": "update_vote_count",
-            "option_counts": get_option_counts(),
-            "agenda_counts": get_agenda_counts(),
-        }
-    )
-
-    # Send general vote notification with profile picture
+      
+    # Send user notification with profile picture
     async_to_sync(channel_layer.group_send)(
         "vote_notifications",
         {
             "type": "new_vote_notification",
-            "message": f"{user.username} voted for {option.name} in {agenda.name}",
+            "message": f'{user.username} voted for {option.name} in {agenda.name}.',
+            "profile_picture": profile_picture_url,
             "option_id": option_id,
             "agenda_id": agenda_id,
-            "profile_picture": profile_picture_url,  
-            "timestamp": timestamp
-
+            "timestamp": timezone.now().isoformat(),
         }
     )
-
-    # Verify if the profile picture is included in the notification data
-    print(f"Notification Data: {user.username} voted for {option.name} with profile picture {profile_picture_url}")
 
     return Response({'detail': 'Vote submitted successfully.'}, status=status.HTTP_201_CREATED)
 
@@ -724,9 +729,6 @@ def create_vote(request):
 #     username = request.data.get('username')
 #     agenda_id = request.data.get('agenda')
 #     option_id = request.data.get('option')
-#     user = User.objects.get(username=username)
-#     user_profile = UserProfile.objects.get(user=user)
-#     print("PROFILE : ",user_profile)
 
 #     try:
 #         user = User.objects.get(username=username)
@@ -735,20 +737,126 @@ def create_vote(request):
 #         option = Option.objects.get(id=option_id)
 #     except (User.DoesNotExist, Agenda.DoesNotExist, Option.DoesNotExist):
 #         return Response({'detail': 'Invalid user, agenda, or option.'}, status=status.HTTP_400_BAD_REQUEST)
+
 #     profile_picture_url = user_profile.profile_picture.url if user_profile.profile_picture else None
-#     print("Profile picture ", profile_picture_url)
+
 #     existing_vote = Vote.objects.filter(user=user, agenda=agenda).first()
 
 #     if existing_vote:
 #         existing_vote.option = option
 #         existing_vote.save()
+#         message = f'Your vote for {option.name} in {agenda.name} has been updated successfully.'
+#     else:
+#         Vote.objects.create(user=user, agenda=agenda, option=option)
+#         message = f'You voted for {option.name} in {agenda.name}.'
+
+#     # Send WebSocket updates for the vote counts
+#     channel_layer = get_channel_layer()
+#     async_to_sync(channel_layer.group_send)(
+#         "vote_count_group",
+#         {
+#             "type": "update_vote_count",
+#         }
+#     )
+
+#     # Send user notification with profile picture
+#     async_to_sync(channel_layer.group_send)(
+#         "vote_notifications",
+#         {
+#             "type": "new_vote_notification",
+#             "message": message,
+#             "profile_picture": profile_picture_url,
+#             "option_id": option_id,
+#             "agenda_id": agenda_id,
+#             "timestamp": timezone.now().isoformat(),
+#         }
+#     )
+
+#     return Response({'detail': 'Vote submitted successfully.'}, status=status.HTTP_201_CREATED)
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def create_vote(request):
+#     username = request.data.get('username')
+#     agenda_id = request.data.get('agenda')
+#     option_id = request.data.get('option')
+
+#     try:
+#         user = User.objects.get(username=username)
+#         user_profile = UserProfile.objects.get(user=user)
+#         agenda = Agenda.objects.get(id=agenda_id)
+#         option = Option.objects.get(id=option_id)
+#     except (User.DoesNotExist, Agenda.DoesNotExist, Option.DoesNotExist):
+#         return Response({'detail': 'Invalid user, agenda, or option.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     profile_picture_url = user_profile.profile_picture.url if user_profile.profile_picture else None
+
+#     existing_vote = Vote.objects.filter(user=user, agenda=agenda).first()
+
+#     if existing_vote:
+#         existing_vote.option = option
+#         existing_vote.save()
+#         message = f'Your vote for {option.name} in {agenda.name} has been updated successfully.'
+#     else:
+#         Vote.objects.create(user=user, agenda=agenda, option=option)
+#         message = f'You voted for {option.name} in {agenda.name}.'
+
+#     # Send WebSocket updates for the vote counts
+#     channel_layer = get_channel_layer()
+#     async_to_sync(channel_layer.group_send)(
+#         "vote_count_group",
+#         {
+#             "type": "update_vote_count",
+#         }
+#     )
+
+#     # Send user notification with profile picture
+#     async_to_sync(channel_layer.group_send)(
+#         "vote_notifications",
+#         {
+#             "type": "new_vote_notification",
+#             "message": message,
+#             "profile_picture": profile_picture_url,
+#             "option_id": option_id,
+#             "agenda_id": agenda_id,
+#             "timestamp": timezone.now().isoformat(),
+#         }
+#     )
+
+#     return Response({'detail': 'Vote submitted successfully.'}, status=status.HTTP_201_CREATED)
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def create_vote(request):
+#     username = request.data.get('username')
+#     agenda_id = request.data.get('agenda')
+#     option_id = request.data.get('option')
+    
+#     try:
+#         user = User.objects.get(username=username)
+#         user_profile = UserProfile.objects.get(user=user)
+#         agenda = Agenda.objects.get(id=agenda_id)
+#         option = Option.objects.get(id=option_id)
+#     except (User.DoesNotExist, Agenda.DoesNotExist, Option.DoesNotExist):
+#         return Response({'detail': 'Invalid user, agenda, or option.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     profile_picture_url = user_profile.profile_picture.url if user_profile.profile_picture else None
+#     print("Profile picture ", profile_picture_url)  # Verify if profile picture URL is correctly set
+
+#     existing_vote = Vote.objects.filter(user=user, agenda=agenda).first()
+
+#     if existing_vote:
+#         existing_vote.option = option
+#         existing_vote.save()
+#         timestamp = timezone.now().isoformat()
 
 #         async_to_sync(get_channel_layer().group_send)(
 #             f"user_{user.id}",
 #             {
 #                 "type": "user_vote_notification",
-#                 "message": f'Your vote for {option.name} in {agenda.name} has been updated successfully.',
-#                 "profile_picture": profile_picture_url,
+#                 "message": f'Your vote for {option.name} in {agenda.name} has been updated successfully ',
+#                 "profile_picture": profile_picture_url,  # Ensure profile picture is part of this message
+#                  "timestamp": timestamp
 #             }
 #         )
 #     else:
@@ -756,64 +864,136 @@ def create_vote(request):
 
 #     channel_layer = get_channel_layer()
 
+#     # Send vote count updates
 #     async_to_sync(channel_layer.group_send)(
 #         "vote_count_group",
 #         {
 #             "type": "update_vote_count",
 #             "option_counts": get_option_counts(),
 #             "agenda_counts": get_agenda_counts(),
-#             "profile_picture": profile_picture_url,
-
 #         }
 #     )
 
+#     # Send general vote notification with profile picture
 #     async_to_sync(channel_layer.group_send)(
 #         "vote_notifications",
 #         {
 #             "type": "new_vote_notification",
-#             "message": f"{user.username} voted for {option.name} in {agenda.name}.",
+#             "message": f"{user.username} voted for {option.name} in {agenda.name}",
 #             "option_id": option_id,
 #             "agenda_id": agenda_id,
-#             "profile_picture": profile_picture_url
+#             "profile_picture": profile_picture_url,  
+#             "timestamp": timestamp
+
 #         }
 #     )
 
+#     # Verify if the profile picture is included in the notification data
+#     print(f"Notification Data: {user.username} voted for {option.name} with profile picture {profile_picture_url}")
+
 #     return Response({'detail': 'Vote submitted successfully.'}, status=status.HTTP_201_CREATED)
 
+# use this below
+# def get_option_counts():
+#     option_counts = (
+#         Vote.objects
+#         .select_related('option')
+#         .values('option_id')
+#         .annotate(vote_count=Count('option_id'))
+#         .values('option_id', 'vote_count', 'option__name')
+#     )
+#     return [
+#         {
+#             'id': option['option_id'],
+#             'name': option['option__name'],
+#             'vote_count': option['vote_count']
+#         }
+#         for option in option_counts
+#     ]
 def get_option_counts():
     option_counts = (
         Vote.objects
-        .select_related('option')
-        .values('option_id')
-        .annotate(vote_count=Count('option_id'))
-        .values('option_id', 'vote_count', 'option__name')
+        .values('option__id', 'option__name')  # Extract related Option fields
+        .annotate(vote_count=Count('option'))  # Count votes for each option
     )
     return [
         {
-            'id': option['option_id'],
+            'id': option['option__id'],
             'name': option['option__name'],
             'vote_count': option['vote_count']
         }
         for option in option_counts
     ]
 
+# def get_agenda_counts():
+#     agenda_counts = (
+#         Vote.objects
+#         .select_related('agenda')
+#         .values('agenda_id')
+#         .annotate(vote_count=Count('agenda_id'))
+#         .values('agenda_id', 'vote_count', 'agenda__name', 'agenda__description')
+#     )
+#     return [
+#         {
+#             'id': agenda['agenda_id'],
+#             'name': agenda['agenda__name'],
+#             'description': agenda['agenda__description'],
+#             'vote_count': agenda['vote_count']
+#         }
+#         for agenda in agenda_counts
+#     ]
+
+# check above
+
+from django.db.models import Count
+
+def get_agenda_with_options():
+    # Get all agendas with vote counts
+    agenda_counts = (
+        Vote.objects
+        .values('agenda__id', 'agenda__name', 'agenda__description')  # Extract related Agenda fields
+        .annotate(vote_count=Count('agenda'))  # Count votes for each agenda
+    )
+
+    # Create a list of agendas with their options
+    agenda_with_options = []
+    
+    for agenda in agenda_counts:
+        # Fetch options related to each agenda and count their votes
+        options = (
+            Option.objects
+            .filter(agenda_id=agenda['agenda__id'])  # Filter options by the current agenda
+            .annotate(vote_count=Count('vote'))  # Count votes for each option
+            .values('id', 'name', 'vote_count')  # Get relevant fields for the options
+        )
+        
+        # Append agenda with its options
+        agenda_with_options.append({
+            'id': agenda['agenda__id'],
+            'name': agenda['agenda__name'],
+            'description': agenda['agenda__description'],
+            'vote_count': agenda['vote_count'],
+            'options': list(options)  # Include the list of options with vote counts
+        })
+    
+    return agenda_with_options
+
 def get_agenda_counts():
     agenda_counts = (
         Vote.objects
-        .select_related('agenda')
-        .values('agenda_id')
-        .annotate(vote_count=Count('agenda_id'))
-        .values('agenda_id', 'vote_count', 'agenda__name', 'agenda__description')
+        .values('agenda__id', 'agenda__name', 'agenda__description')  # Extract related Agenda fields
+        .annotate(vote_count=Count('agenda'))  # Count votes for each agenda
     )
     return [
         {
-            'id': agenda['agenda_id'],
+            'id': agenda['agenda__id'],
             'name': agenda['agenda__name'],
             'description': agenda['agenda__description'],
             'vote_count': agenda['vote_count']
         }
         for agenda in agenda_counts
     ]
+
 # @api_view(['POST'])
 # @permission_classes([IsAuthenticated])
 # def create_vote(request):
