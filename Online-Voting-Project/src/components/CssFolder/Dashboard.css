@@ -79,3 +79,46 @@
     font-size: 1rem; /* Smaller heading size for mobile */
   }
 }
+.custom-container {
+  background-color: #f8f9fa; /* Light background for the container */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.custom-heading {
+  color: #343a40; /* Darker color for heading */
+  font-weight: bold;
+}
+
+.admin-card, .election-card, .result-card {
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.admin-card {
+  background-color: #e9ecef; /* Light grey for admin card */
+}
+
+.election-card {
+  background-color: #ffffff; /* White for election cards */
+}
+
+.result-card {
+  background-color: #ffffff; /* White for result card */
+}
+
+.row-heading {
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.custom-btn {
+  background-color: #007bff; /* Primary button color */
+  color: white;
+}
+
+.custom-btn:hover {
+  background-color: #0056b3; /* Darker on hover */
+  color: white;
+}

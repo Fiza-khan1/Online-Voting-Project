@@ -1,73 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from './AuthContext.js';
-import { formatDistanceToNow } from 'date-fns'; // For formatting timestamps
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Container, ListGroup } from 'react-bootstrap';
 import './CssFolder/NotificationsPage.css'; // Custom CSS for styling
 
-function NotificationsPage() {
-  const { user } = useAuth();
-  const [notifications, setNotifications] = useState([]);
-
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        const response = await fetch('http://127.0.0.1:8000/notifications/', {
-          headers: {
-            'Authorization': `Token ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setNotifications(data.notifications); // Adjust based on API response
-        } else {
-          console.error('Failed to fetch notifications:', await response.json());
-        }
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    };
-
-    fetchNotifications();
-  }, []);
-
+function NotificationPage({ notifications = [] }) {
   return (
-    <div className="notifications-page">
+    <Container className="notification-page-container">
       <h2>Notifications</h2>
-      {notifications.length > 0 ? (
-        notifications.map((notification, index) => (
-          <div key={index} className="notification-item">
-            {notification.profilePicture ? (
-              <img
-                src={notification.profilePicture}
-                alt="Profile"
-                className="notification-profile-picture"
-              />
-            ) : (
-              <div className="notification-avatar">
-                {notification.avatarLetter}
-              </div>
-            )}
-            <div className="notification-content">
-              <div className="notification-message">
-                <strong>{notification.username}</strong>
-                {notification.message.replace(notification.username, '')}
-              </div>
-              {notification.timestamp && (
-                <span className="notification-timestamp">
-                  {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
-                </span>
+      <ListGroup>
+        {notifications.length > 0 ? (
+          notifications.map((notification, index) => (
+            <ListGroup.Item key={index} className="d-flex align-items-center">
+              {notification.profilePicture ? (
+                <img
+                  src={notification.profilePicture}
+                  alt="Profile"
+                  className="notification-profile-picture"
+                />
+              ) : (
+                <div className="notification-avatar">
+                  {notification.avatarLetter}
+                </div>
               )}
-            </div>
-          </div>
-        ))
-      ) : (
-        <p>No notifications</p>
-      )}
-      <Link to="/">Back to Home</Link>
-    </div>
+              <span className="ms-2">{notification.message}</span>
+            </ListGroup.Item>
+          ))
+        ) : (
+          <ListGroup.Item>No new notifications</ListGroup.Item>
+        )}
+      </ListGroup>
+    </Container>
   );
 }
 
-export default NotificationsPage;
+export default NotificationPage;

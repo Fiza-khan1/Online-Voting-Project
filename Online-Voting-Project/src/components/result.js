@@ -71,6 +71,7 @@ function VoteCountDisplayOne() {
     };
     socket.onmessage = (e) => {
       const data = JSON.parse(e.data);
+      console.log("WebSocket Data Received:", data); 
       setOptionVoteCounts(data.option_counts || []);
       setAgendaVoteCounts(data.agenda_counts || []);
     };

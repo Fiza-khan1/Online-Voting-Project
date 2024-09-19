@@ -1,25 +1,23 @@
-/* NavBar.css */
-
 /* Remove border from dropdown symbols */
-#dropdown-notifications, #dropdown-settings {
+#dropdown-notifications,
+#dropdown-settings {
   border: none !important; /* Remove border */
-  
 }
 
-/* Remove background color and border on hover for dropdown symbols */
-#dropdown-notifications:hover, #dropdown-settings:hover {
+/* Keep icons' color unchanged on hover */
+#dropdown-notifications:hover,
+#dropdown-settings:hover {
   background-color: transparent !important; /* Keep background transparent on hover */
-  color: inherit; /* Keep text color unchanged on hover */
+  color: white !important; /* Ensure color remains white on hover */
 }
 
 /* Custom styling for avatar */
 .avatar-container {
   display: flex;
-  align-items: center;
- 
-  
+  align-items: center; /* Align items vertically */
 }
 
+/* Avatar image styling */
 .avatar-image {
   width: 40px;
   height: 40px;
@@ -37,16 +35,13 @@
   justify-content: center;
   font-size: 18px;
   color: #333;
-  border: none; /* Remove border from avatar circle */
 }
 
 /* Adjust spacing for icons */
-/* Remove border and background color change for the notification and settings icons */
 .dropdown-toggle {
   border: none !important; /* Remove border */
   box-shadow: none !important; /* Remove box shadow */
   background-color: transparent !important; /* Ensure background stays transparent */
-  
 }
 
 .dropdown-toggle:hover,
@@ -60,57 +55,7 @@
 #dropdown-settings {
   color: white; /* Set default icon color */
   background-color: transparent; /* Ensure background stays transparent */
-  border: none; /* Ensure no border */
-  
 }
-/* NavBar.css */
-
-/* Style for notifications dropdown */
-.notification-profile-picture {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-right: 10px;
-}
-
-/* Style for default avatar */
-.avatar-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #007bff;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    margin-right: 10px;
-}
-
-/* Remove background color change on hover for symbols */
-#dropdown-notifications:hover,
-#dropdown-settings:hover {
-  background-color: transparent !important; /* Ensure background stays transparent */
-  color: white; /* Maintain icon color on hover */
-}
-
-/* Remove border from the dropdown menu */
-.dropdown-menu {
-  border: none !important; /* Remove border from dropdown menu */
- 
-}
-
-.transparent-dropdown-toggle {
-  background-color: transparent !important; /* Makes the background transparent */
-  border: none !important; /* Removes the border */
-}
-
-.transparent-dropdown-toggle:focus {
-  box-shadow: none; /* Removes the focus outline */
-}
-
-/* NavBar.css */
 
 /* Style for notifications dropdown */
 .notification-profile-picture {
@@ -121,19 +66,7 @@
   margin-right: 10px;
 }
 
-/* Style for default avatar */
-.avatar-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #007bff;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  margin-right: 10px;
-}
+/* Default avatar styling */
 .notification-avatar {
   width: 40px;
   height: 40px;
@@ -147,118 +80,10 @@
   font-weight: bold;
 }
 
-.avatar-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #007bff; /* Customize color */
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-/* CSS for notification avatar */
-.notification-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #007bff; /* Customize color */
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.notification-profile-picture {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-/* CSS for notification avatar */
-.notification-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #007bff; /* Customize color */
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.notification-profile-picture {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.notification-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #007bff; /* Or another color of your choice */
-  color: white;
-  font-size: 18px;
-  font-weight: bold;
-}
-.notification-message {
-  display: flex;
-  flex-direction: column;
-}
-
-.notification-message strong {
-  font-weight: bold;
-}
-
-.notification-message span {
-  color: #d1d1d1; /* Light color for the remaining text */
-}
-
-.notification-avatar {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #007bff; /* Background color for the avatar */
-  color: white;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.notification-profile-picture {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-}
-.notification-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.notification-message {
-  margin-bottom: 0.5rem;
-}
-
-.notification-timestamp {
-  font-size: 0.85rem;
-  color: #888;
-}
+/* Notification message styling */
 .notification-item {
   display: flex;
-  flex-direction: column;
+  align-items: center; /* Align items within notification */
   padding: 0.5rem;
   margin-bottom: 0.5rem;
   border-radius: 0.25rem;
@@ -269,6 +94,7 @@
 .notification-content {
   display: flex;
   flex-direction: column;
+  margin-left: 10px; /* Space between avatar and text */
 }
 
 .notification-message {
@@ -280,20 +106,16 @@
   color: #888;
 }
 
-.notification-profile-picture {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+/* Remove border from the dropdown menu */
+.dropdown-menu {
+  border: none !important; /* Remove border from dropdown menu */
 }
 
-.notification-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #007bff;
-  color: white;
-  font-weight: bold;
+.transparent-dropdown-toggle {
+  background-color: transparent !important; /* Makes the background transparent */
+  border: none !important; /* Removes the border */
+}
+
+.transparent-dropdown-toggle:focus {
+  box-shadow: none; /* Removes the focus outline */
 }
